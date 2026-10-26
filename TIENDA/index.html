@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Showroom Colocio Outlet | Diseñador 3D & Control Comercial</title>
+    
+    <!-- Tipografía profesional -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Three.js + Controles + Loaders -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    
+    <!-- Catálogo de productos compilado -->
+    <script src="modelos_glb_data.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0b0f17;
+            --panel-bg: rgba(15, 23, 42, 0.92);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --panel-glass: rgba(255, 255, 255, 0.04);
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --accent-glow: rgba(37, 99, 235, 0.35);
+            --cyan: #06b6d4;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            
+            /* Semáforos técnicos de ventas ultrabrillantes */
+            --sem-baja: #ff8f8f;        /* Coral vivo */
+            --sem-baja-med: #ffe285;    /* Amarillo oro */
+            --sem-alta-med: #ffd2a8;    /* Naranja durazno */
+            --sem-alta: #b6e6a4;        /* Verde menta brillante */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        #webgl-viewport {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* BARRA SUPERIOR */
+        header {
+            position: absolute;
+            top: 14px;
+            left: 18px;
+            right: 18px;
+            height: 58px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 10;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+        }
+
+        .brand-zone {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #0ea5e9, #2563eb);
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 14px;
+            color: #fff;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .brand-text h1 {
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+
+        .brand-text span {
+            font-size: 10px;
+            color: var(--cyan);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn {
+            background: var(--panel-glass);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            padding: 7px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-save {
+            background: #059669;
+            border-color: #10b981;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-save:hover {
+            background: #10b981;
+        }
+
+        .btn-cyan {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        .btn-cyan:hover {
+            background: var(--cyan);
+            color: #000;
+        }
+
+        /* SLIDER DE MUROS DINÁMICOS */
+        .wall-slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 0 10px;
+            border-left: 1px solid var(--panel-border);
+            border-right: 1px solid var(--panel-border);
+        }
+
+        .wall-slider-container input[type="range"] {
+            width: 80px;
+            accent-color: var(--cyan);
+            cursor: pointer;
+        }
+
+        /* PANELES LATERALES */
+        .sidebar {
+            position: absolute;
+            top: 84px;
+            bottom: 20px;
+            width: 350px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.55);
+            overflow: hidden;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .sidebar-left {
+            left: 18px;
+        }
+
+        .sidebar-right {
+            right: 18px;
+            width: 340px;
+        }
+
+        .panel-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--panel-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-body {
+            padding: 14px 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* CATÁLOGO DE PRODUCTOS */
+        .catalog-search {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 12px;
+            margin-bottom: 10px;
+            outline: none;
+        }
+
+        .catalog-search:focus {
+            border-color: var(--accent);
+        }
+
+        .category-pills {
+            display: flex;
+            gap: 5px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+        }
+
+        .pill-btn {
+            background: var(--panel-glass);
+            border: 1px solid var(--panel-border);
+            color: var(--text-muted);
+            padding: 4px 9px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .pill-btn.active, .pill-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .catalog-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .product-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--panel-border);
+            border-radius: 10px;
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .product-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .product-thumb {
+            width: 68px;
+            height: 68px;
+            border-radius: 8px;
+            background: #1e293b;
+            object-fit: cover;
+            border: 1px solid var(--panel-border);
+            flex-shrink: 0;
+        }
+
+        .product-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .product-name {
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .product-sku {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .product-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+        }
+
+        .product-price {
+            font-size: 13px;
+            font-weight: 800;
+            color: #38bdf8;
+        }
+
+        /* PÍLDORA SEMÁFORO DE VENTAS */
+        .sales-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .sem-baja { background: rgba(255, 143, 143, 0.18); color: var(--sem-baja); border: 1px solid var(--sem-baja); }
+        .sem-baja-med { background: rgba(255, 226, 133, 0.18); color: var(--sem-baja-med); border: 1px solid var(--sem-baja-med); }
+        .sem-alta-med { background: rgba(255, 210, 168, 0.18); color: var(--sem-alta-med); border: 1px solid var(--sem-alta-med); }
+        .sem-alta { background: rgba(182, 230, 164, 0.18); color: var(--sem-alta); border: 1px solid var(--sem-alta); }
+
+        /* CONTROL COMERCIAL */
+        .kpi-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--panel-border);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .kpi-title {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-val {
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+            margin-top: 2px;
+        }
+
+        .kpi-sub {
+            font-size: 10px;
+            color: var(--cyan);
+            margin-top: 4px;
+        }
+
+        /* FICHA TÉCNICA */
+        .tech-sheet {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid var(--accent);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 10px;
+            display: none;
+            box-shadow: 0 0 20px rgba(37, 99, 235, 0.2);
+        }
+
+        .tech-sheet.active {
+            display: block;
+        }
+
+        .tech-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+
+        .tech-label {
+            color: var(--text-muted);
+        }
+
+        .tech-val {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* MICRO-DESPLAZAMIENTO Y ADOSAMIENTO */
+        .control-pad {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--panel-border);
+        }
+
+        .dpad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            width: 140px;
+            margin: 0 auto 10px auto;
+        }
+
+        .dpad-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--panel-border);
+            color: #fff;
+            padding: 8px 0;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dpad-btn:hover {
+            background: var(--accent);
+        }
+
+        /* MODALES */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal-box {
+            width: 600px;
+            max-width: 92%;
+            background: #111827;
+            border: 1px solid var(--panel-border);
+            border-radius: 14px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--panel-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .distrib-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .distrib-row.active {
+            border-color: var(--accent);
+            background: rgba(37, 99, 235, 0.12);
+        }
+
+        /* TOAST FLOATING */
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #1e293b;
+            border: 1px solid var(--accent);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #toast.visible {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* BARRA INFERIOR DE ESTADO */
+        .bottom-bar {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 10px;
+            padding: 6px 14px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Lienzo WebGL Three.js -->
+    <div id="webgl-viewport"></div>
+
+    <!-- Barra Superior -->
+    <header>
+        <div class="brand-zone">
+            <div class="brand-icon">CO</div>
+            <div class="brand-text">
+                <h1>COLOCIO OUTLET</h1>
+                <span>SHOWROOM 3D & PLANO COMERCIAL</span>
+            </div>
+        </div>
+
+        <!-- Slider de Muros Dinámicos -->
+        <div class="wall-slider-container">
+            <span>Muros 3D:</span>
+            <input type="range" id="wall-height-slider" min="0" max="100" value="100" title="Ajuste de altura de muros">
+            <span id="wall-slider-val" style="width: 32px; font-weight: 600; color: #fff;">100%</span>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="toolbar-group">
+            <button class="btn btn-save" id="btn-quick-save" title="Guardar avance actual (Ctrl + S)">💾 Guardar</button>
+            <button class="btn btn-cyan" id="btn-manage-distribs" title="Gestor de Distribuciones">📂 Distribuciones</button>
+            <button class="btn" id="btn-sheets-sync" title="Conexión en Tiempo Real Google Sheets">🟢 Sheets Live</button>
+            <button class="btn btn-primary" id="btn-share-link" title="Copiar enlace para compartir">🔗 Compartir</button>
+        </div>
+    </header>
+
+    <!-- Barra Lateral Izquierda: Catálogo y Biblioteca 3D -->
+    <aside class="sidebar sidebar-left">
+        <div class="panel-head">
+            <div class="panel-title">📦 Catálogo 3D</div>
+            <span id="catalog-total-badge" style="font-size: 11px; color: var(--cyan); font-weight: 700;">28 items</span>
+        </div>
+
+        <div class="panel-body">
+            <input type="text" class="catalog-search" id="catalog-search-input" placeholder="🔍 Buscar por modelo, categoría o SKU...">
+
+            <div class="category-pills" id="category-pills">
+                <button class="pill-btn active" data-cat="TODOS">Todos</button>
+                <button class="pill-btn" data-cat="Salas y Sofás">Salas y Sofás</button>
+                <button class="pill-btn" data-cat="Recámara">Recámara</button>
+                <button class="pill-btn" data-cat="Comedor y Almacenaje">Comedor</button>
+                <button class="pill-btn" data-cat="Silletería">Sillas</button>
+            </div>
+
+            <div class="catalog-list" id="catalog-container">
+                <!-- Se inyecta dinámicamente -->
+            </div>
+        </div>
+    </aside>
+
+    <!-- Barra Lateral Derecha: Control Comercial, Adosamiento y Ficha Técnica -->
+    <aside class="sidebar sidebar-right">
+        <div class="panel-head">
+            <div class="panel-title">📊 Control Comercial</div>
+            <button class="btn" style="padding: 4px 8px; font-size: 11px;" id="btn-clear-scene">Limpiar</button>
+        </div>
+
+        <div class="panel-body">
+            <!-- Métrica Inversión y Ocupación -->
+            <div class="kpi-card">
+                <div class="kpi-title">Inversión Mobiliario en Sala</div>
+                <div class="kpi-val" id="kpi-total-val">$0.00 USD</div>
+                <div class="kpi-sub" id="kpi-sub-stats">0 piezas | 0.00 m² piso ocupado</div>
+            </div>
+
+            <!-- Ficha Técnica del Mueble Seleccionado -->
+            <div class="tech-sheet" id="tech-sheet">
+                <div style="font-size: 12px; font-weight: 800; color: var(--cyan); margin-bottom: 8px;">
+                    FICHA TÉCNICA
+                </div>
+                <div class="tech-row"><span class="tech-label">Producto:</span><span class="tech-val" id="ts-name">-</span></div>
+                <div class="tech-row"><span class="tech-label">SKU:</span><span class="tech-val" id="ts-sku" style="font-family: monospace;">-</span></div>
+                <div class="tech-row"><span class="tech-label">Dimensiones:</span><span class="tech-val" id="ts-dims">-</span></div>
+                <div class="tech-row"><span class="tech-label">Ventas Históricas:</span><span class="tech-val" id="ts-sales">-</span></div>
+                <div class="tech-row"><span class="tech-label">Semáforo:</span><span class="tech-val" id="ts-semaforo">-</span></div>
+                <div class="tech-row"><span class="tech-label">Stock Bodega / Tienda:</span><span class="tech-val" id="ts-stock">-</span></div>
+                <div class="tech-row"><span class="tech-label">Precio Unitario:</span><span class="tech-val" id="ts-price" style="color: #38bdf8;">-</span></div>
+
+                <!-- Micro-desplazamiento y Adosamiento Inteligente -->
+                <div class="control-pad">
+                    <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-align: center; margin-bottom: 6px;">
+                        MICRO-AJUSTE MILIMÉTRICO (5 cm)
+                    </div>
+                    <div class="dpad-grid">
+                        <div></div>
+                        <button class="dpad-btn" id="dpad-up" title="Mover hacia arriba (Z-)">▲</button>
+                        <div></div>
+                        <button class="dpad-btn" id="dpad-left" title="Mover a la izquierda (X-)">◀</button>
+                        <button class="dpad-btn" id="btn-snap-dock" title="Adosar/Pegar con mueble cercano" style="background: #2563eb; font-weight: bold;">🧲</button>
+                        <button class="dpad-btn" id="dpad-right" title="Mover a la derecha (X+)">▶</button>
+                        <div></div>
+                        <button class="dpad-btn" id="dpad-down" title="Mover hacia abajo (Z+)">▼</button>
+                        <div></div>
+                    </div>
+
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn" style="flex: 1;" id="btn-rotate-sel">🔄 Rotar 90°</button>
+                        <button class="btn" style="flex: 1; color: var(--danger);" id="btn-delete-sel">🗑️ Quitar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Listado de Mobiliario en Sala -->
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); margin: 12px 0 6px 0; text-transform: uppercase;">
+                Distribución en Planta (<span id="scene-items-count">0</span>)
+            </div>
+            <div id="scene-item-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto;">
+                <div style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 20px;">
+                    Selecciona un producto del catálogo para ubicarlo en la tienda.
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Barra Inferior de Estado -->
+    <div class="bottom-bar">
+        <span class="live-dot"></span>
+        <span id="live-status-text">Google Sheets: Conexión Activa (Polling 30s)</span>
+        <span style="opacity: 0.3;">|</span>
+        <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" id="chk-blueprint-overlay" checked>
+            <span>Superponer Plano Outlet (AutoCAD)</span>
+        </label>
+        <span style="opacity: 0.3;">|</span>
+        <button class="btn" style="padding: 2px 8px; font-size: 10px;" id="btn-cam-top">Vista Plano Cenital</button>
+        <button class="btn" style="padding: 2px 8px; font-size: 10px;" id="btn-cam-iso">Vista 3D</button>
+    </div>
+
+    <!-- Modal Gestor de Distribuciones -->
+    <div class="modal-overlay" id="modal-distribs">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">📂 Gestor de Distribuciones - Tienda Colocio</div>
+                <button class="btn" id="modal-distribs-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                    <input type="text" class="catalog-search" id="input-new-distrib-name" placeholder="Nombre de la nueva distribución..." style="margin-bottom: 0;">
+                    <button class="btn btn-primary" id="btn-create-distrib">+ Crear Nueva</button>
+                </div>
+                <div id="distribs-list-container"></div>
+                <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--panel-border); display: flex; justify-content: space-between;">
+                    <button class="btn" id="btn-export-json-file">💾 Exportar JSON</button>
+                    <label class="btn" style="cursor: pointer;">
+                        📥 Importar JSON <input type="file" id="input-import-json" accept=".json" style="display: none;">
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Configuración Google Sheets -->
+    <div class="modal-overlay" id="modal-sheets">
+        <div class="modal-box" style="width: 520px;">
+            <div class="modal-header">
+                <div class="modal-title">🟢 Conexión en Tiempo Real - Google Sheets</div>
+                <button class="btn" id="modal-sheets-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+                    Ingresa el ID de la hoja de cálculo de Google Sheets pública o compartida con enlace de lectura:
+                </p>
+                <div style="margin-bottom: 12px;">
+                    <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">SPREADSHEET_ID:</label>
+                    <input type="text" class="catalog-search" id="input-sheet-id" value="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">NOMBRE DE LA HOJA (Pestaña):</label>
+                    <input type="text" class="catalog-search" id="input-sheet-name" value="Inventario">
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                    <button class="btn" id="btn-force-sheets-fetch">🔄 Sincronizar Ahora</button>
+                    <button class="btn btn-primary" id="btn-save-sheets-config">Guardar y Conectar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast de Notificaciones -->
+    <div id="toast">🔔 Mensaje</div>
+
+    <!-- SCRIPT THREE.JS Y ARQUITECTURA -->
+    <script>
+        /**
+         * SHOWROOM COLOCIO OUTLET - MOTOR THREE.JS Y ARQUITECTURA A MEDIDA
+         * Basado en las cotas reales de PLANO OUTLET.pdf
+         */
+
+        const LOCAL_STORAGE_PREFIX = 'colocio_outlet_distribs_';
+
+        // Dimensiones exactas de la tienda según PLANO OUTLET.pdf:
+        // 7 módulos estructurales entre vigas (5.50m c/u) = 38.50m longitud
+        // Ancho transversal = 12.00m
+        // Altura libre = 3.50m
+        const STORE_DIMENSIONS = {
+            lengthX: 38.50,
+            widthZ: 12.00,
+            height: 3.50,
+            beamCount: 7
+        };
+
+        const AppState = {
+            wallHeightRatio: 1.0,
+            selectedItem: null,
+            placedItems: [],
+            sheetsConfig: {
+                spreadsheetId: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
+                sheetName: "Inventario",
+                lastSync: null
+            }
+        };
+
+        // 1. INICIALIZAR THREE.JS
+        const container = document.getElementById('webgl-viewport');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0e17);
+        scene.fog = new THREE.FogExp2(0x0a0e17, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.2, 200);
+        camera.position.set(22, 22, 24);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.02;
+        controls.minDistance = 2;
+        controls.maxDistance = 100;
+        controls.target.set(0, 1.2, 0);
+
+        // 2. ILUMINACIÓN ARQUITECTÓNICA
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.DirectionalLight(0xfff8ee, 0.85);
+        sunLight.position.set(20, 30, 15);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        sunLight.shadow.camera.near = 1;
+        sunLight.shadow.camera.far = 100;
+        const dSize = 28;
+        sunLight.shadow.camera.left = -dSize;
+        sunLight.shadow.camera.right = dSize;
+        sunLight.shadow.camera.top = dSize;
+        sunLight.shadow.camera.bottom = -dSize;
+        sunLight.shadow.bias = -0.0004;
+        scene.add(sunLight);
+
+        const fillLight = new THREE.DirectionalLight(0x8bc4ff, 0.35);
+        fillLight.position.set(-20, 18, -15);
+        scene.add(fillLight);
+
+        // 3. CONSTRUCCIÓN DE LA ARQUITECTURA DE COLOCIO OUTLET
+        const buildingGroup = new THREE.Group();
+        const wallsGroup = new THREE.Group();
+        const floorsGroup = new THREE.Group();
+        const beamsGroup = new THREE.Group();
+
+        buildingGroup.add(floorsGroup);
+        buildingGroup.add(wallsGroup);
+        buildingGroup.add(beamsGroup);
+        scene.add(buildingGroup);
+
+        const textureLoader = new THREE.TextureLoader();
+        let blueprintMesh = null;
+
+        // Cargar plano real PLANO OUTLET
+        textureLoader.load(
+            'PLANOS/plano_outlet.png',
+            (tex) => {
+                tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                if (blueprintMesh) {
+                    blueprintMesh.material.map = tex;
+                    blueprintMesh.material.needsUpdate = true;
+                }
+            },
+            undefined,
+            () => console.info("Plano PNG local cargando con rejilla de respaldo.")
+        );
+
+        function construirArquitecturaColocio() {
+            const { lengthX: L, widthZ: W, height: H, beamCount } = STORE_DIMENSIONS;
+
+            // Piso Principal
+            const floorGeo = new THREE.PlaneGeometry(L, W);
+            const floorMat = new THREE.MeshStandardMaterial({
+                color: 0x161e2e,
+                roughness: 0.5,
+                metalness: 0.1
+            });
+            const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+            floorMesh.rotation.x = -Math.PI / 2;
+            floorMesh.receiveShadow = true;
+            floorsGroup.add(floorMesh);
+
+            // Rejilla técnica de 1 metro
+            const gridHelper = new THREE.GridHelper(L, Math.round(L), 0x0ea5e9, 0x1e293b);
+            gridHelper.position.y = 0.005;
+            gridHelper.scale.z = W / L;
+            floorsGroup.add(gridHelper);
+
+            // Superposición de Plano AutoCAD 2D (PLANO OUTLET)
+            const bpMat = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.25,
+                depthWrite: false
+            });
+            blueprintMesh = new THREE.Mesh(new THREE.PlaneGeometry(L, W), bpMat);
+            blueprintMesh.rotation.x = -Math.PI / 2;
+            blueprintMesh.position.y = 0.008;
+            floorsGroup.add(blueprintMesh);
+
+            // Muros Perimetrales
+            const wallMaterial = new THREE.MeshStandardMaterial({
+                color: 0x242e42,
+                roughness: 0.85,
+                metalness: 0.05
+            });
+
+            const t = 0.25; // Grosor de muro
+
+            // Muro posterior (Z = -W/2)
+            const wallBack = new THREE.Mesh(new THREE.BoxGeometry(L, H, t), wallMaterial);
+            wallBack.position.set(0, H / 2, -W / 2);
+            wallBack.castShadow = true;
+            wallBack.receiveShadow = true;
+            wallsGroup.add(wallBack);
+
+            // Muros laterales (X = -L/2 y X = L/2)
+            const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(t, H, W), wallMaterial);
+            wallLeft.position.set(-L / 2, H / 2, 0);
+            wallLeft.castShadow = true;
+            wallLeft.receiveShadow = true;
+            wallsGroup.add(wallLeft);
+
+            const wallRight = new THREE.Mesh(new THREE.BoxGeometry(t, H, W), wallMaterial);
+            wallRight.position.set(L / 2, H / 2, 0);
+            wallRight.castShadow = true;
+            wallRight.receiveShadow = true;
+            wallsGroup.add(wallRight);
+
+            // Muro frontal con Acceso Comercial de 5 metros
+            const accesoW = 5.0;
+            const segW = (L - accesoW) / 2;
+
+            const wallFrontL = new THREE.Mesh(new THREE.BoxGeometry(segW, H, t), wallMaterial);
+            wallFrontL.position.set(-L / 2 + segW / 2, H / 2, W / 2);
+            wallsGroup.add(wallFrontL);
+
+            const wallFrontR = new THREE.Mesh(new THREE.BoxGeometry(segW, H, t), wallMaterial);
+            wallFrontR.position.set(L / 2 - segW / 2, H / 2, W / 2);
+            wallsGroup.add(wallFrontR);
+
+            const dintel = new THREE.Mesh(new THREE.BoxGeometry(accesoW, 0.6, t), wallMaterial);
+            dintel.position.set(0, H - 0.3, W / 2);
+            wallsGroup.add(dintel);
+
+            // 7 Vigas Estructurales ("PROYECCIÓN DE VIGA" de PLANO OUTLET.pdf)
+            const beamGeo = new THREE.BoxGeometry(0.35, 0.45, W);
+            const beamMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6 });
+
+            const baySpacing = L / (beamCount + 1);
+            for (let i = 1; i <= beamCount; i++) {
+                const posX = -L / 2 + (i * baySpacing);
+                const beam = new THREE.Mesh(beamGeo, beamMat);
+                beam.position.set(posX, H - 0.22, 0);
+                beam.castShadow = true;
+                beamsGroup.add(beam);
+            }
+        }
+        construirArquitecturaColocio();
+
+        // 4. CONTROL DEL SLIDER DE MUROS
+        const wallSlider = document.getElementById('wall-height-slider');
+        const wallSliderVal = document.getElementById('wall-slider-val');
+        wallSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value) / 100;
+            AppState.wallHeightRatio = val;
+            wallSliderVal.textContent = Math.round(val * 100) + '%';
+
+            const scaleY = Math.max(0.02, val);
+            wallsGroup.children.forEach(w => {
+                if (w.isMesh) {
+                    w.scale.y = scaleY;
+                    w.position.y = (STORE_DIMENSIONS.height * scaleY) / 2;
+                }
+            });
+            beamsGroup.visible = val > 0.3;
+        });
+
+        // 5. CARGADOR DE MODELOS 3D (.GLB) CON SEMÁFORO DE VENTAS ULTRABRILLANTE
+        const gltfLoader = new THREE.GLTFLoader();
+
+        function crearSemaforoVentasFootprint(ancho, fondo, tipoSemaforo) {
+            const group = new THREE.Group();
+
+            let colorHex;
+            if (tipoSemaforo === "baja") colorHex = 0xff8f8f;        // Coral vivo
+            else if (tipoSemaforo === "baja-media") colorHex = 0xffe285; // Amarillo oro
+            else if (tipoSemaforo === "alta-media") colorHex = 0xffd2a8; // Naranja durazno
+            else colorHex = 0xb6e6a4;                                // Verde menta brillante
+
+            // Huella plana translúcida
+            const planeGeo = new THREE.PlaneGeometry(ancho, fondo);
+            const planeMat = new THREE.MeshBasicMaterial({
+                color: colorHex,
+                transparent: true,
+                opacity: 0.30,
+                toneMapped: false,
+                depthWrite: false
+            });
+            const plane = new THREE.Mesh(planeGeo, planeMat);
+            plane.rotation.x = -Math.PI / 2;
+            plane.position.y = 0.012;
+            group.add(plane);
+
+            // Contorno nítido
+            const edgesGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(ancho, 0.01, fondo));
+            const lineMat = new THREE.LineBasicMaterial({
+                color: colorHex,
+                transparent: true,
+                opacity: 1.0,
+                toneMapped: false,
+                linewidth: 2
+            });
+            const outline = new THREE.LineSegments(edgesGeo, lineMat);
+            outline.position.y = 0.015;
+            group.add(outline);
+
+            group.userData = { isTrafficLight: true, semaforo: tipoSemaforo, colorHex: colorHex };
+            return group;
+        }
+
+        function colocarProductoEnTienda(prodId, customTransform = null) {
+            const prod = (window.CATALOGO_PRODUCTOS || []).find(p => p.id === prodId);
+            if (!prod) return;
+
+            const instanceId = 'item_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+            const rootGroup = new THREE.Group();
+            rootGroup.name = instanceId;
+
+            const dimX = prod.dimensiones.x;
+            const dimZ = prod.dimensiones.z;
+            const dimY = prod.dimensiones.y;
+
+            // 1. Semáforo de Ventas en el suelo
+            const footprint = crearSemaforoVentasFootprint(dimX, dimZ, prod.semaforo_ventas);
+            rootGroup.add(footprint);
+
+            // 2. Cargar modelo .glb o fallback
+            if (prod.glb_url) {
+                gltfLoader.load(
+                    prod.glb_url,
+                    (gltf) => {
+                        const model = gltf.scene;
+                        model.traverse((node) => {
+                            if (node.isMesh) {
+                                node.castShadow = true;
+                                node.receiveShadow = true;
+                            }
+                        });
+
+                        const bbox = new THREE.Box3().setFromObject(model);
+                        const bSize = bbox.getSize(new THREE.Vector3());
+                        const scaleFactor = dimY / (bSize.y || 1);
+                        model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+                        const postBbox = new THREE.Box3().setFromObject(model);
+                        model.position.y = -postBbox.min.y;
+
+                        rootGroup.add(model);
+                    },
+                    undefined,
+                    () => {
+                        const fallbackMesh = new THREE.Mesh(
+                            new THREE.BoxGeometry(dimX, dimY, dimZ),
+                            new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.6 })
+                        );
+                        fallbackMesh.position.y = dimY / 2;
+                        fallbackMesh.castShadow = true;
+                        rootGroup.add(fallbackMesh);
+                    }
+                );
+            }
+
+            // Posicionamiento
+            if (customTransform) {
+                rootGroup.position.set(customTransform.x, customTransform.y || 0, customTransform.z);
+                rootGroup.rotation.y = customTransform.r || 0;
+            } else {
+                const count = AppState.placedItems.length;
+                const row = Math.floor(count / 6);
+                const col = count % 6;
+                rootGroup.position.set(-14 + (col * 3.2), 0, -3 + (row * 3.4));
+            }
+
+            scene.add(rootGroup);
+
+            const itemEntry = {
+                instanceId: instanceId,
+                productId: prod.id,
+                sku: prod.sku,
+                nombre: prod.nombre,
+                categoria: prod.categoria,
+                dimensiones: prod.dimensiones,
+                precio: prod.precio,
+                stock_bodega: prod.stock_bodega,
+                stock_tienda: prod.stock_tienda,
+                ventas_historicas: prod.ventas_historicas,
+                semaforo_ventas: prod.semaforo_ventas,
+                threeObj: rootGroup
+            };
+
+            AppState.placedItems.push(itemEntry);
+            seleccionarMueble(itemEntry);
+            actualizarMetricasComerciales();
+            mostrarToast(`"${prod.nombre}" añadido a Colocio`);
+        }
+
+        const selectionBox = new THREE.BoxHelper(new THREE.Mesh(), 0x06b6d4);
+        selectionBox.visible = false;
+        scene.add(selectionBox);
+
+        function seleccionarMueble(itemEntry) {
+            AppState.selectedItem = itemEntry;
+            if (!itemEntry) {
+                selectionBox.visible = false;
+                document.getElementById('tech-sheet').classList.remove('active');
+                actualizarListaItemsUI();
+                return;
+            }
+
+            selectionBox.setFromObject(itemEntry.threeObj);
+            selectionBox.visible = true;
+
+            const ts = document.getElementById('tech-sheet');
+            ts.classList.add('active');
+            document.getElementById('ts-name').textContent = itemEntry.nombre;
+            document.getElementById('ts-sku').textContent = itemEntry.sku;
+            document.getElementById('ts-dims').textContent = `${itemEntry.dimensiones.x} x ${itemEntry.dimensiones.z} x ${itemEntry.dimensiones.y} m`;
+            document.getElementById('ts-sales').textContent = `${itemEntry.ventas_historicas} unidades`;
+            document.getElementById('ts-stock').textContent = `${itemEntry.stock_bodega} bod / ${itemEntry.stock_tienda} tda`;
+            document.getElementById('ts-price').textContent = `$${itemEntry.precio.toFixed(2)} USD`;
+
+            const semEl = document.getElementById('ts-semaforo');
+            semEl.innerHTML = `<span class="sales-badge sem-${itemEntry.semaforo_ventas}">${itemEntry.semaforo_ventas.toUpperCase()}</span>`;
+
+            actualizarListaItemsUI();
+        }
+
+        // 6. RAYCASTING Y ARRASTRE
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const planeIntersect = new THREE.Vector3();
+        let isDragging = false;
+
+        window.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.sidebar') || e.target.closest('header') || e.target.closest('.bottom-bar') || e.target.closest('.modal-box')) return;
+
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            const candidateMeshes = [];
+            AppState.placedItems.forEach(item => {
+                item.threeObj.traverse(child => {
+                    if (child.isMesh && !child.userData.isTrafficLight) {
+                        candidateMeshes.push(child);
+                    }
+                });
+            });
+
+            const intersects = raycaster.intersectObjects(candidateMeshes, false);
+            if (intersects.length > 0) {
+                let topObj = intersects[0].object;
+                while (topObj.parent && topObj.parent !== scene) {
+                    const match = AppState.placedItems.find(i => i.threeObj === topObj);
+                    if (match) {
+                        seleccionarMueble(match);
+                        isDragging = true;
+                        controls.enabled = false;
+                        return;
+                    }
+                    topObj = topObj.parent;
+                }
+            } else if (e.button === 0) {
+                seleccionarMueble(null);
+            }
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (isDragging && AppState.selectedItem) {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+
+                if (raycaster.ray.intersectPlane(dragPlane, planeIntersect)) {
+                    const snap = 0.20;
+                    const halfL = STORE_DIMENSIONS.lengthX / 2 - 0.8;
+                    const halfW = STORE_DIMENSIONS.widthZ / 2 - 0.8;
+
+                    let tx = Math.round(planeIntersect.x / snap) * snap;
+                    let tz = Math.round(planeIntersect.z / snap) * snap;
+
+                    tx = Math.max(-halfL, Math.min(halfL, tx));
+                    tz = Math.max(-halfW, Math.min(halfW, tz));
+
+                    AppState.selectedItem.threeObj.position.x = tx;
+                    AppState.selectedItem.threeObj.position.z = tz;
+                    selectionBox.setFromObject(AppState.selectedItem.threeObj);
+                }
+            }
+        });
+
+        window.addEventListener('pointerup', () => {
+            if (isDragging) {
+                isDragging = false;
+                controls.enabled = true;
+            }
+        });
+
+        // 7. MICRO-DESPLAZAMIENTO Y ADOSAMIENTO INTELIGENTE
+        const STEP_SIZE = 0.05;
+
+        function moverSeleccionado(dx, dz) {
+            if (!AppState.selectedItem) return;
+            const obj = AppState.selectedItem.threeObj;
+            obj.position.x += dx;
+            obj.position.z += dz;
+            selectionBox.setFromObject(obj);
+        }
+
+        document.getElementById('dpad-up').addEventListener('click', () => moverSeleccionado(0, -STEP_SIZE));
+        document.getElementById('dpad-down').addEventListener('click', () => moverSeleccionado(0, STEP_SIZE));
+        document.getElementById('dpad-left').addEventListener('click', () => moverSeleccionado(-STEP_SIZE, 0));
+        document.getElementById('dpad-right').addEventListener('click', () => moverSeleccionado(STEP_SIZE, 0));
+
+        document.getElementById('btn-rotate-sel').addEventListener('click', () => {
+            if (!AppState.selectedItem) return;
+            AppState.selectedItem.threeObj.rotation.y += Math.PI / 2;
+            selectionBox.setFromObject(AppState.selectedItem.threeObj);
+            mostrarToast("Mueble rotado 90°");
+        });
+
+        document.getElementById('btn-delete-sel').addEventListener('click', () => {
+            if (!AppState.selectedItem) return;
+            scene.remove(AppState.selectedItem.threeObj);
+            AppState.placedItems = AppState.placedItems.filter(i => i.instanceId !== AppState.selectedItem.instanceId);
+            seleccionarMueble(null);
+            actualizarMetricasComerciales();
+            mostrarToast("Mueble retirado de la sala");
+        });
+
+        // Adosamiento Inteligente (🧲 Botón Pegar)
+        document.getElementById('btn-snap-dock').addEventListener('click', () => {
+            if (!AppState.selectedItem) return;
+            const current = AppState.selectedItem;
+            const others = AppState.placedItems.filter(i => i.instanceId !== current.instanceId);
+            if (others.length === 0) {
+                mostrarToast("No hay otros muebles cercanos para adosar.");
+                return;
+            }
+
+            let closest = null;
+            let minDist = Infinity;
+            const curPos = current.threeObj.position;
+
+            others.forEach(other => {
+                const dist = curPos.distanceTo(other.threeObj.position);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = other;
+                }
+            });
+
+            if (closest && minDist < 4.0) {
+                const dx = curPos.x - closest.threeObj.position.x;
+                const dz = curPos.z - closest.threeObj.position.z;
+
+                const curDimX = current.dimensiones.x;
+                const curDimZ = current.dimensiones.z;
+                const cloDimX = closest.dimensiones.x;
+                const cloDimZ = closest.dimensiones.z;
+
+                if (Math.abs(dx) > Math.abs(dz)) {
+                    const sign = dx > 0 ? 1 : -1;
+                    current.threeObj.position.x = closest.threeObj.position.x + sign * ((cloDimX / 2) + (curDimX / 2));
+                    current.threeObj.position.z = closest.threeObj.position.z;
+                } else {
+                    const sign = dz > 0 ? 1 : -1;
+                    current.threeObj.position.z = closest.threeObj.position.z + sign * ((cloDimZ / 2) + (curDimZ / 2));
+                    current.threeObj.position.x = closest.threeObj.position.x;
+                }
+
+                selectionBox.setFromObject(current.threeObj);
+                mostrarToast(`🧲 Adosado a "${closest.nombre}"`);
+            } else {
+                mostrarToast("Acerca más el mueble al elemento deseado para adosar.");
+            }
+        });
+
+        // 8. MÉTRICAS COMERCIALES Y ACTUALIZACIÓN UI
+        function actualizarMetricasComerciales() {
+            const total = AppState.placedItems.reduce((acc, curr) => acc + curr.precio, 0);
+            const areaOcupada = AppState.placedItems.reduce((acc, curr) => acc + (curr.dimensiones.x * curr.dimensiones.z), 0);
+
+            document.getElementById('kpi-total-val').textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`;
+            document.getElementById('kpi-sub-stats').textContent = `${AppState.placedItems.length} piezas | ${areaOcupada.toFixed(2)} m² piso ocupado`;
+            document.getElementById('scene-items-count').textContent = AppState.placedItems.length;
+
+            actualizarListaItemsUI();
+        }
+
+        function actualizarListaItemsUI() {
+            const listEl = document.getElementById('scene-item-list');
+            if (AppState.placedItems.length === 0) {
+                listEl.innerHTML = `<div style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 20px;">Sin elementos en sala.</div>`;
+                return;
+            }
+
+            listEl.innerHTML = "";
+            AppState.placedItems.forEach(item => {
+                const isSel = AppState.selectedItem && AppState.selectedItem.instanceId === item.instanceId;
+                const row = document.createElement('div');
+                row.className = "distrib-row" + (isSel ? " active" : "");
+                row.style.padding = "6px 10px";
+                row.innerHTML = `
+                    <div>
+                        <div style="font-size: 11px; font-weight: 700;">${item.nombre}</div>
+                        <div style="font-size: 9px; color: var(--text-muted); font-family: monospace;">${item.sku}</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span class="sales-badge sem-${item.semaforo_ventas}" style="font-size: 8px;">${item.semaforo_ventas}</span>
+                        <span style="font-size: 11px; font-weight: 700; color: #38bdf8;">$${item.precio}</span>
+                    </div>
+                `;
+                row.addEventListener('click', () => {
+                    seleccionarMueble(item);
+                    controls.target.set(item.threeObj.position.x, 1.0, item.threeObj.position.z);
+                });
+                listEl.appendChild(row);
+            });
+        }
+
+        function renderizarCatalogo(cat = "TODOS", query = "") {
+            const container = document.getElementById('catalog-container');
+            container.innerHTML = "";
+
+            const items = (window.CATALOGO_PRODUCTOS || []).filter(p => {
+                const matchCat = (cat === "TODOS" || p.categoria.toLowerCase() === cat.toLowerCase());
+                const matchQ = (!query || p.nombre.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query));
+                return matchCat && matchQ;
+            });
+
+            document.getElementById('catalog-total-badge').textContent = `${items.length} items`;
+
+            items.forEach(prod => {
+                const card = document.createElement('div');
+                card.className = "product-card";
+                card.innerHTML = `
+                    <img src="${prod.foto_url}" class="product-thumb" onerror="this.src='https://placehold.co/100x100/1e293b/fff?text=3D+Item'">
+                    <div class="product-info">
+                        <div>
+                            <div class="product-name">${prod.nombre}</div>
+                            <div class="product-sku">${prod.sku}</div>
+                        </div>
+                        <div class="product-meta">
+                            <span class="product-price">$${prod.precio.toFixed(2)}</span>
+                            <span class="sales-badge sem-${prod.semaforo_ventas}">${prod.semaforo_ventas.toUpperCase()}</span>
+                        </div>
+                    </div>
+                `;
+                card.addEventListener('click', () => colocarProductoEnTienda(prod.id));
+                container.appendChild(card);
+            });
+        }
+
+        document.querySelectorAll('#category-pills .pill-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#category-pills .pill-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderizarCatalogo(btn.dataset.cat, document.getElementById('catalog-search-input').value.toLowerCase().trim());
+            });
+        });
+
+        document.getElementById('catalog-search-input').addEventListener('input', (e) => {
+            const activeCat = document.querySelector('#category-pills .pill-btn.active').dataset.cat;
+            renderizarCatalogo(activeCat, e.target.value.toLowerCase().trim());
+        });
+
+        // 9. GOOGLE SHEETS EN TIEMPO REAL
+        async function fetchGoogleSheetsData() {
+            const { spreadsheetId, sheetName } = AppState.sheetsConfig;
+            const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+
+            try {
+                const res = await fetch(url);
+                const txt = await res.text();
+                const jsonStr = txt.replace(/^[/*\s\n]*google\.visualization\.Query\.setResponse\(|\);?[/*\s\n]*$/g, '');
+                const data = JSON.parse(jsonStr);
+
+                if (data && data.table && data.table.rows) {
+                    actualizarDatosDesdeSheets(data.table.rows);
+                    AppState.sheetsConfig.lastSync = new Date();
+                    document.getElementById('live-status-text').textContent = `Google Sheets Sincronizado: ${new Date().toLocaleTimeString()} (30s)`;
+                }
+            } catch (err) {
+                console.info("[Sheets Live] Modo catálogo local activo.");
+            }
+        }
+
+        function actualizarDatosDesdeSheets(rows) {
+            rows.forEach(r => {
+                const c = r.c;
+                if (!c || c.length < 2) return;
+                const sku = c[0] ? String(c[0].v).trim() : null;
+                const ventas = c[4] ? Number(c[4].v) : null;
+                const stock = c[5] ? Number(c[5].v) : null;
+
+                if (sku && (ventas !== null || stock !== null)) {
+                    const item = (window.CATALOGO_PRODUCTOS || []).find(p => p.sku.toLowerCase() === sku.toLowerCase());
+                    if (item) {
+                        if (ventas !== null) item.ventas_historicas = ventas;
+                        if (stock !== null) item.stock_bodega = stock;
+
+                        if (item.ventas_historicas < 15) item.semaforo_ventas = "baja";
+                        else if (item.ventas_historicas < 30) item.semaforo_ventas = "baja-media";
+                        else if (item.ventas_historicas < 50) item.semaforo_ventas = "alta-media";
+                        else item.semaforo_ventas = "alta";
+                    }
+                }
+            });
+
+            refreshAllSalesVisuals();
+        }
+
+        function refreshAllSalesVisuals() {
+            const activeCat = document.querySelector('#category-pills .pill-btn.active').dataset.cat;
+            renderizarCatalogo(activeCat, document.getElementById('catalog-search-input').value.toLowerCase().trim());
+
+            AppState.placedItems.forEach(pi => {
+                const matched = (window.CATALOGO_PRODUCTOS || []).find(p => p.id === pi.productId);
+                if (matched) {
+                    pi.ventas_historicas = matched.ventas_historicas;
+                    pi.semaforo_ventas = matched.semaforo_ventas;
+
+                    const tl = pi.threeObj.children.find(ch => ch.userData && ch.userData.isTrafficLight);
+                    if (tl) {
+                        let col;
+                        if (pi.semaforo_ventas === "baja") col = 0xff8f8f;
+                        else if (pi.semaforo_ventas === "baja-media") col = 0xffe285;
+                        else if (pi.semaforo_ventas === "alta-media") col = 0xffd2a8;
+                        else col = 0xb6e6a4;
+
+                        tl.children[0].material.color.setHex(col);
+                        tl.children[1].material.color.setHex(col);
+                    }
+                }
+            });
+
+            if (AppState.selectedItem) {
+                seleccionarMueble(AppState.selectedItem);
+            }
+            actualizarMetricasComerciales();
+        }
+
+        setInterval(fetchGoogleSheetsData, 30000);
+
+        // 10. PERSISTENCIA TOTAL
+        function guardarDistribucionActual(nombre = null) {
+            const distName = nombre || `Distribución ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            const distId = 'dist_' + Date.now();
+
+            const distData = {
+                v: 2,
+                id: distId,
+                store: "colocio_outlet",
+                nombre: distName,
+                fecha: new Date().toISOString(),
+                muros: AppState.wallHeightRatio * 100,
+                cam: {
+                    pos: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+                    target: { x: controls.target.x, y: controls.target.y, z: controls.target.z }
+                },
+                furniture: AppState.placedItems.map(item => ({
+                    id: item.productId,
+                    sku: item.sku,
+                    x: parseFloat(item.threeObj.position.x.toFixed(3)),
+                    z: parseFloat(item.threeObj.position.z.toFixed(3)),
+                    y: parseFloat(item.threeObj.position.y.toFixed(3)),
+                    r: parseFloat(item.threeObj.rotation.y.toFixed(3))
+                }))
+            };
+
+            const key = LOCAL_STORAGE_PREFIX + distId;
+            localStorage.setItem(key, JSON.stringify(distData));
+            mostrarToast(`💾 Distribución "${distName}" guardada.`);
+            actualizarListaDistribucionesUI();
+        }
+
+        function cargarDistribucion(distData) {
+            if (!distData || !distData.furniture) return;
+
+            AppState.placedItems.forEach(i => scene.remove(i.threeObj));
+            AppState.placedItems = [];
+            seleccionarMueble(null);
+
+            distData.furniture.forEach(f => {
+                colocarProductoEnTienda(f.id, { x: f.x, y: f.y, z: f.z, r: f.r });
+            });
+
+            if (distData.cam) {
+                camera.position.set(distData.cam.pos.x, distData.cam.pos.y, distData.cam.pos.z);
+                controls.target.set(distData.cam.target.x, distData.cam.target.y, distData.cam.target.z);
+            }
+
+            mostrarToast(`📂 Distribución cargada (${distData.furniture.length} muebles)`);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                guardarDistribucionActual();
+            }
+        });
+
+        document.getElementById('btn-quick-save').addEventListener('click', () => guardarDistribucionActual());
+
+        document.getElementById('btn-share-link').addEventListener('click', () => {
+            const dataToShare = {
+                v: 2,
+                store: "colocio_outlet",
+                f: AppState.placedItems.map(i => ({
+                    id: i.productId,
+                    x: parseFloat(i.threeObj.position.x.toFixed(2)),
+                    z: parseFloat(i.threeObj.position.z.toFixed(2)),
+                    r: parseFloat(i.threeObj.rotation.y.toFixed(2))
+                }))
+            };
+            const b64 = btoa(JSON.stringify(dataToShare));
+            const shareUrl = `${window.location.origin}${window.location.pathname}#distrib=${b64}`;
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                mostrarToast("🔗 Enlace copiado al portapapeles listo para compartir");
+            });
+        });
+
+        function verificarHashURL() {
+            if (window.location.hash.startsWith('#distrib=')) {
+                try {
+                    const raw = atob(window.location.hash.replace('#distrib=', ''));
+                    const parsed = JSON.parse(raw);
+                    if (parsed && parsed.f) {
+                        setTimeout(() => {
+                            cargarDistribucion({ furniture: parsed.f });
+                        }, 500);
+                    }
+                } catch (e) {}
+            }
+        }
+
+        function actualizarListaDistribucionesUI() {
+            const container = document.getElementById('distribs-list-container');
+            container.innerHTML = "";
+
+            const keys = Object.keys(localStorage).filter(k => k.startsWith(LOCAL_STORAGE_PREFIX));
+            if (keys.length === 0) {
+                container.innerHTML = `<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">No hay distribuciones guardadas aún.</div>`;
+                return;
+            }
+
+            keys.forEach(k => {
+                try {
+                    const d = JSON.parse(localStorage.getItem(k));
+                    const row = document.createElement('div');
+                    row.className = "distrib-row";
+                    row.innerHTML = `
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700;">${d.nombre}</div>
+                            <div style="font-size: 10px; color: var(--text-muted);">${d.furniture.length} muebles • ${new Date(d.fecha).toLocaleDateString()}</div>
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="btn btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="cargarDistribucionPorKey('${k}')">Cargar</button>
+                            <button class="btn" style="padding: 4px 8px; font-size: 11px;" onclick="sobreescribirDistribucion('${k}')">Guardar</button>
+                            <button class="btn" style="padding: 4px 8px; font-size: 11px; color: var(--danger);" onclick="eliminarDistribucion('${k}')">✕</button>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                } catch(e) {}
+            });
+        }
+
+        window.cargarDistribucionPorKey = function(key) {
+            const d = JSON.parse(localStorage.getItem(key));
+            cargarDistribucion(d);
+            document.getElementById('modal-distribs').classList.remove('open');
+        };
+
+        window.sobreescribirDistribucion = function(key) {
+            const prev = JSON.parse(localStorage.getItem(key));
+            guardarDistribucionActual(prev.nombre);
+        };
+
+        window.eliminarDistribucion = function(key) {
+            localStorage.removeItem(key);
+            actualizarListaDistribucionesUI();
+            mostrarToast("Distribución eliminada");
+        };
+
+        document.getElementById('btn-manage-distribs').addEventListener('click', () => {
+            actualizarListaDistribucionesUI();
+            document.getElementById('modal-distribs').classList.add('open');
+        });
+        document.getElementById('modal-distribs-close').addEventListener('click', () => {
+            document.getElementById('modal-distribs').classList.remove('open');
+        });
+
+        document.getElementById('btn-sheets-sync').addEventListener('click', () => {
+            document.getElementById('modal-sheets').classList.add('open');
+        });
+        document.getElementById('modal-sheets-close').addEventListener('click', () => {
+            document.getElementById('modal-sheets').classList.remove('open');
+        });
+
+        document.getElementById('btn-create-distrib').addEventListener('click', () => {
+            const val = document.getElementById('input-new-distrib-name').value.trim();
+            guardarDistribucionActual(val || null);
+            document.getElementById('input-new-distrib-name').value = "";
+        });
+
+        document.getElementById('btn-export-json-file').addEventListener('click', () => {
+            const data = {
+                v: 2,
+                store: "colocio_outlet",
+                furniture: AppState.placedItems.map(i => ({
+                    id: i.productId,
+                    sku: i.sku,
+                    x: i.threeObj.position.x,
+                    z: i.threeObj.position.z,
+                    r: i.threeObj.rotation.y
+                }))
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `distribucion_colocio_${Date.now()}.json`;
+            a.click();
+            mostrarToast("Archivo JSON exportado");
+        });
+
+        document.getElementById('input-import-json').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    try {
+                        const parsed = JSON.parse(evt.target.result);
+                        cargarDistribucion(parsed);
+                        document.getElementById('modal-distribs').classList.remove('open');
+                    } catch(err) {
+                        alert("Error al leer el archivo JSON.");
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        document.getElementById('btn-save-sheets-config').addEventListener('click', () => {
+            AppState.sheetsConfig.spreadsheetId = document.getElementById('input-sheet-id').value.trim();
+            AppState.sheetsConfig.sheetName = document.getElementById('input-sheet-name').value.trim();
+            document.getElementById('modal-sheets').classList.remove('open');
+            fetchGoogleSheetsData();
+            mostrarToast("Configuración de Google Sheets actualizada");
+        });
+
+        document.getElementById('btn-force-sheets-fetch').addEventListener('click', () => {
+            fetchGoogleSheetsData();
+            mostrarToast("Sincronizando con Google Sheets...");
+        });
+
+        document.getElementById('btn-cam-top').addEventListener('click', () => {
+            camera.position.set(0, 32, 0.001);
+            controls.target.set(0, 0, 0);
+        });
+
+        document.getElementById('btn-cam-iso').addEventListener('click', () => {
+            camera.position.set(22, 22, 24);
+            controls.target.set(0, 1.2, 0);
+        });
+
+        document.getElementById('chk-blueprint-overlay').addEventListener('change', (e) => {
+            if (blueprintMesh) blueprintMesh.visible = e.target.checked;
+        });
+
+        document.getElementById('btn-clear-scene').addEventListener('click', () => {
+            if (confirm("¿Deseas retirar todo el mobiliario del showroom?")) {
+                AppState.placedItems.forEach(i => scene.remove(i.threeObj));
+                AppState.placedItems = [];
+                seleccionarMueble(null);
+                actualizarMetricasComerciales();
+                mostrarToast("Showroom despejado");
+            }
+        });
+
+        function mostrarToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = "🔔 " + msg;
+            toast.classList.add('visible');
+            setTimeout(() => toast.classList.remove('visible'), 3200);
+        }
+
+        // 11. BUCLE DE ANIMACIÓN
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderizarCatalogo();
+            verificarHashURL();
+
+            setTimeout(() => {
+                if (AppState.placedItems.length === 0) {
+                    colocarProductoEnTienda('prod-028', { x: -10, y: 0, z: -2, r: 0 }); // Sofá Santa Fe
+                    colocarProductoEnTienda('prod-027', { x: -5, y: 0, z: -2, r: 0 });  // Sofá Rennes
+                    colocarProductoEnTienda('prod-018', { x: 3, y: 0, z: 2, r: 0 });   // Cama Santa Fe
+                    colocarProductoEnTienda('prod-006', { x: 5.2, y: 0, z: 2, r: 0 }); // Buró Africa
+                    colocarProductoEnTienda('prod-003', { x: 10, y: 0, z: -2.5, r: 0 });// Bufetera Madrid
+                }
+            }, 400);
+        });
+    </script>
+</body>
+</html>
