@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tienda Colosio Outlet | Maqueta Arquitectónica 3D & Control Comercial</title>
     
-    <!-- Fuentes tipográficas profesionales -->
+    <!-- Tipografía profesional -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -23,7 +23,7 @@
             --bg-color: #0b0f19;
             --panel-bg: rgba(15, 23, 42, 0.94);
             --panel-border: rgba(255, 255, 255, 0.08);
-            --panel-glass: rgba(255, 255, 255, 0.035);
+            --panel-glass: rgba(255, 255, 255, 0.04);
             --accent: #2563eb;
             --accent-hover: #1d4ed8;
             --accent-glow: rgba(37, 99, 235, 0.4);
@@ -66,7 +66,7 @@
             z-index: 1;
         }
 
-        /* BARRA SUPERIOR PRINCIPAL */
+        /* BARRA SUPERIOR */
         header {
             position: absolute;
             top: 14px;
@@ -119,10 +119,10 @@
             letter-spacing: 0.9px;
         }
 
-        /* SELECTOR DE PLANTAS ARQUITECTÓNICAS */
+        /* SELECTOR DE PLANTAS ARQUITECTÓNICAS (4 MODOS) */
         .floor-tabs {
             display: flex;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.45);
             padding: 3px;
             border-radius: 8px;
             border: 1px solid var(--panel-border);
@@ -636,7 +636,7 @@
             <button class="tab-btn" data-mode="ALL" id="btn-mode-all">🌐 Vista Explotada</button>
         </div>
 
-        <!-- Slider de Muros Dinámicos (0% Plano diáfano a 100% Muros sólidos) -->
+        <!-- Slider de Muros Dinámicos (0% a 100%) -->
         <div class="wall-slider-container">
             <span>Muros 3D:</span>
             <input type="range" id="wall-height-slider" min="0" max="100" value="100" title="Ajuste de altura de muros">
@@ -745,7 +745,7 @@
         <span style="opacity: 0.3;">|</span>
         <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
             <input type="checkbox" id="chk-blueprint-overlay" checked>
-            <span>Superposición de Plano Arquitectónico 2D</span>
+            <span>Plano 2D Calibrado 1:1</span>
         </label>
         <span style="opacity: 0.3;">|</span>
         <button class="btn" style="padding: 2px 8px; font-size: 10px;" id="btn-cam-top">Vista Cenital (Plano 2D)</button>
@@ -810,17 +810,18 @@
         /**
          * TIENDA COLOSIO OUTLET - ARQUITECTURA 3D A MEDIDA EXACTA (1:1 METROS)
          * Cotas Oficiales: 54.40 m (X) x 13.47 m (Z), entrepiso 3.80 m y doble altura a 5.83 m.
+         * Texturas 2D de alta resolución recortadas al perímetro real de muros (sin márgenes).
          */
 
         const LOCAL_STORAGE_PREFIX = 'colosio_distribs_';
 
         // 1. COTAS ARQUITECTÓNICAS EXACTAS DE PLANOS
         const STORE_GEOMETRY = {
-            lengthX: 54.40,     // Eje X: 11 crujías estructurales (5.31 + 5.30*6 + 5.29 + 5.71 + 5.00 + 1.20)
-            widthZ: 13.47,      // Eje Z: Ejes Y1 a Y14
+            lengthX: 54.40,        // Eje X: 54.40 m (11 crujías)
+            widthZ: 13.47,         // Eje Z: 13.47 m
             heightEntrepiso: 3.80, // Altura libre de entrepiso Nivel 1
-            heightRoof: 5.83,   // Altura doble altura / vigas de cubierta
-            wallThickness: 0.25 // Espesor estándar de muro
+            heightRoof: 5.83,      // Altura doble altura / vigas de cubierta
+            wallThickness: 0.25    // Espesor de muro
         };
 
         const AppState = {
@@ -839,10 +840,10 @@
         const container = document.getElementById('webgl-viewport');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0a0e17);
-        scene.fog = new THREE.FogExp2(0x0a0e17, 0.012);
+        scene.fog = new THREE.FogExp2(0x0a0e17, 0.010);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.2, 300);
-        camera.position.set(28, 28, 34);
+        camera.position.set(30, 26, 32);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -862,7 +863,7 @@
         controls.target.set(0, 1.5, 0);
 
         // 3. ILUMINACIÓN ARQUITECTÓNICA
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.72);
         scene.add(ambientLight);
 
         const sunLight = new THREE.DirectionalLight(0xfff8ee, 0.85);
@@ -888,7 +889,6 @@
         const architectureRoot = new THREE.Group();
         scene.add(architectureRoot);
 
-        // Grupos de niveles
         const groupPB = new THREE.Group();
         const groupN1 = new THREE.Group();
         const groupOutlet = new THREE.Group();
@@ -901,7 +901,7 @@
         let texPB = null, texN1 = null, texOutlet = null;
         let meshFloorPB = null, meshFloorN1 = null, meshFloorOutlet = null;
 
-        // Carga de texturas 2D calibradas
+        // Carga de texturas 2D calibradas (4038x1000 píxeles, proporción exacta 54.40 / 13.47 = 4.038)
         function cargarTexturasPlanos() {
             texPB = textureLoader.load('PLANOS/plano_pb.png', (t) => {
                 t.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -916,9 +916,7 @@
                 if (meshFloorOutlet) meshFloorOutlet.material.map = t;
             });
         }
-        cargarTexturasPlanos();
-
-        const wallMaterial = new THREE.MeshStandardMaterial({
+        cargarTexturasPlanos();        const wallMaterial = new THREE.MeshStandardMaterial({
             color: 0x242e42,
             roughness: 0.85,
             metalness: 0.05
@@ -930,96 +928,202 @@
             metalness: 0.1
         });
 
+        const pbWalls = [];
+        const n1Walls = [];
+
         function construirPlantaBaja() {
             const { lengthX: L, widthZ: W, heightEntrepiso: H, wallThickness: t } = STORE_GEOMETRY;
 
-            // Losa de piso Planta Baja
+            // 1. Losa de piso general PB
             const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(L, W), floorMaterial);
             floorMesh.rotation.x = -Math.PI / 2;
             floorMesh.receiveShadow = true;
             groupPB.add(floorMesh);
 
-            // Rejilla de cotas de 1 metro
+            // Rejilla técnica de 1 metro
             const gridHelper = new THREE.GridHelper(L, Math.round(L), 0x0ea5e9, 0x1e293b);
             gridHelper.position.y = 0.005;
             gridHelper.scale.z = W / L;
             groupPB.add(gridHelper);
 
-            // Malla de proyección de plano 2D PB
+            // 2. Malla de proyección de plano PB 1:1 calibrada
             meshFloorPB = new THREE.Mesh(
                 new THREE.PlaneGeometry(L, W),
-                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.28, depthWrite: false, map: texPB })
+                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.90, depthWrite: false, map: texPB })
             );
             meshFloorPB.rotation.x = -Math.PI / 2;
             meshFloorPB.position.y = 0.008;
             groupPB.add(meshFloorPB);
 
-            // Muro posterior (Z = -W/2)
+            // Helper para registrar muros ajustables con el slider
+            function addWall(mesh, baseH = H) {
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                mesh.userData.baseH = baseH;
+                mesh.userData.baseY = mesh.position.y;
+                groupPB.add(mesh);
+                pbWalls.push(mesh);
+                return mesh;
+            }
+
+            // 3. Muro Posterior Recto (Eje X1, Z = -W/2, Longitud 54.40 m)
             const wallBack = new THREE.Mesh(new THREE.BoxGeometry(L, H, t), wallMaterial);
             wallBack.position.set(0, H / 2, -W / 2);
-            wallBack.castShadow = true;
-            wallBack.receiveShadow = true;
-            groupPB.add(wallBack);
+            addWall(wallBack);
 
-            // Muros laterales
+            // 4. Muro Lateral Izquierdo / Oeste (Eje Y1, X = -L/2, Ancho 13.47 m)
             const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(t, H, W), wallMaterial);
             wallLeft.position.set(-L / 2, H / 2, 0);
-            wallLeft.castShadow = true;
-            wallLeft.receiveShadow = true;
-            groupPB.add(wallLeft);
+            addWall(wallLeft);
 
-            const wallRight = new THREE.Mesh(new THREE.BoxGeometry(t, H, W), wallMaterial);
-            wallRight.position.set(L / 2, H / 2, 0);
-            wallRight.castShadow = true;
-            wallRight.receiveShadow = true;
-            groupPB.add(wallRight);
-
-            // Muro frontal con Acceso Principal (Vano de 5.79m según plano)
+            // 5. Muro Lateral Derecho / Este (Eje Y14, X = +L/2) con VANO DE ACCESO PRINCIPAL (5.79 m)
             const accesoW = 5.79;
-            const segW = (L - accesoW) / 2;
+            const segW = (W - accesoW) / 2;
 
-            const wallFrontL = new THREE.Mesh(new THREE.BoxGeometry(segW, H, t), wallMaterial);
-            wallFrontL.position.set(-L / 2 + segW / 2, H / 2, W / 2);
-            groupPB.add(wallFrontL);
+            const wallRightTop = new THREE.Mesh(new THREE.BoxGeometry(t, H, segW), wallMaterial);
+            wallRightTop.position.set(L / 2, H / 2, -W / 2 + segW / 2);
+            addWall(wallRightTop);
 
-            const wallFrontR = new THREE.Mesh(new THREE.BoxGeometry(segW, H, t), wallMaterial);
-            wallFrontR.position.set(L / 2 - segW / 2, H / 2, W / 2);
-            groupPB.add(wallFrontR);
+            const wallRightBottom = new THREE.Mesh(new THREE.BoxGeometry(t, H, segW), wallMaterial);
+            wallRightBottom.position.set(L / 2, H / 2, W / 2 - segW / 2);
+            addWall(wallRightBottom);
 
-            const dintel = new THREE.Mesh(new THREE.BoxGeometry(accesoW, 0.7, t), wallMaterial);
-            dintel.position.set(0, H - 0.35, W / 2);
-            groupPB.add(dintel);
+            const dintel = new THREE.Mesh(new THREE.BoxGeometry(t, 0.70, accesoW), wallMaterial);
+            dintel.position.set(L / 2, H - 0.35, 0);
+            addWall(dintel);
 
-            // Cubo de Escalera con 18 escalones ("UP 18")
+            // Puertas de cristal en el acceso principal
+            const glassDoorMat = new THREE.MeshPhysicalMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.45, roughness: 0.1 });
+            const doorMesh = new THREE.Mesh(new THREE.BoxGeometry(0.06, H - 0.70, accesoW - 0.2), glassDoorMat);
+            doorMesh.position.set(L / 2, (H - 0.70) / 2, 0);
+            groupPB.add(doorMesh);
+
+            // Escalinata exterior de acceso (10 escalones hacia el Este)
+            const extStairs = new THREE.Group();
+            const extSteps = 10;
+            const extStepH = 0.18;
+            const extStepD = 0.30;
+            const extStepW = 4.80;
+            for (let i = 0; i < extSteps; i++) {
+                const sMesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(extStepD, (extSteps - i) * extStepH, extStepW),
+                    new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 })
+                );
+                sMesh.position.set(L / 2 + 0.15 + i * extStepD, ((extSteps - i) * extStepH) / 2, 0);
+                sMesh.receiveShadow = true;
+                extStairs.add(sMesh);
+            }
+            groupPB.add(extStairs);
+
+            // 6. Fachada Frontal Arquitectónica (Muro Inclinado + Fachada Curva Vidriada)
+            // Segmento Inclinado Oeste (de X = -27.20, Z = +6.735 a X = -21.41, Z = +4.40)
+            const angWestLen = Math.hypot(5.79, 2.335);
+            const angWestMesh = new THREE.Mesh(new THREE.BoxGeometry(angWestLen, H, t), wallMaterial);
+            angWestMesh.position.set((-27.20 - 21.41) / 2, H / 2, (6.735 + 4.40) / 2);
+            angWestMesh.rotation.y = Math.atan2(2.335, 5.79);
+            addWall(angWestMesh);
+
+            // Arco Curvo Central de la Fachada (de X = -21.41 a X = +16.80, vértice en X = 0, Z = +1.70)
+            const numSegments = 16;
+            const xStart = -21.41, xEnd = 16.80;
+            let prevX = xStart;
+            let prevZ = 4.40;
+            for (let i = 1; i <= numSegments; i++) {
+                const frac = i / numSegments;
+                const curX = xStart + frac * (xEnd - xStart);
+                const normX = (curX - (-2.3)) / 19.1;
+                const curZ = 1.70 + 2.70 * (normX * normX);
+                
+                const segLen = Math.hypot(curX - prevX, curZ - prevZ);
+                const segAngle = Math.atan2(curZ - prevZ, curX - prevX);
+
+                const segWall = new THREE.Mesh(new THREE.BoxGeometry(segLen, H, 0.12), glassDoorMat);
+                segWall.position.set((prevX + curX) / 2, H / 2, (prevZ + curZ) / 2);
+                segWall.rotation.y = -segAngle;
+                addWall(segWall);
+
+                const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.18, H, 0.18), wallMaterial);
+                mullion.position.set(curX, H / 2, curZ);
+                addWall(mullion);
+
+                prevX = curX;
+                prevZ = curZ;
+            }
+
+            // Segmento Inclinado Este (de X = +16.80, Z = +3.60 a X = +22.80, Z = +6.735)
+            const angEastLen = Math.hypot(6.00, 3.135);
+            const angEastMesh = new THREE.Mesh(new THREE.BoxGeometry(angEastLen, H, t), wallMaterial);
+            angEastMesh.position.set((16.80 + 22.80) / 2, H / 2, (3.60 + 6.735) / 2);
+            angEastMesh.rotation.y = -Math.atan2(3.135, 6.00);
+            addWall(angEastMesh);
+
+            // Muro Retorno hacia Fachada de Acceso (de X = +22.80 a X = +27.20, Z = +6.735)
+            const retLen = 27.20 - 22.80;
+            const retMesh = new THREE.Mesh(new THREE.BoxGeometry(retLen, H, t), wallMaterial);
+            retMesh.position.set((22.80 + 27.20) / 2, H / 2, 6.735);
+            addWall(retMesh);
+
+            // 7. Cubo de Escalera Oficial (18 escalones reales, ubicado en el Oeste cerca de Eje Y1)
             const stairGroup = new THREE.Group();
             const numSteps = 18;
             const stepH = H / numSteps;
             const stepD = 0.28;
-            const stepW = 1.45;
-            for (let s = 0; s < numSteps; s++) {
+            const stepW = 1.40;
+
+            for (let s = 0; s < 13; s++) {
+                const step = new THREE.Mesh(
+                    new THREE.BoxGeometry(stepD, stepH, stepW),
+                    new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 })
+                );
+                step.position.set(s * stepD, s * stepH + stepH / 2, 0);
+                step.receiveShadow = true;
+                stairGroup.add(step);
+            }
+            const landing = new THREE.Mesh(
+                new THREE.BoxGeometry(stepW, stepH, stepW * 1.6),
+                new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 })
+            );
+            landing.position.set(13 * stepD + stepW / 2, 13 * stepH - stepH / 2, -stepW * 0.3);
+            stairGroup.add(landing);
+
+            for (let s = 0; s < 5; s++) {
                 const step = new THREE.Mesh(
                     new THREE.BoxGeometry(stepW, stepH, stepD),
                     new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 })
                 );
-                step.position.set(0, s * stepH + stepH / 2, s * stepD);
+                step.position.set(13 * stepD + stepW / 2, (13 + s) * stepH + stepH / 2, -stepW * 0.8 - s * stepD);
                 stairGroup.add(step);
             }
-            // Ubicación en crujía este según plano arquitectónico
-            stairGroup.position.set(L * 0.18, 0, -W / 2 + 2.6);
+            stairGroup.position.set(-25.5, 0, 3.2);
             groupPB.add(stairGroup);
 
-            // Columnas de carga en crujías modulares (5.30m)
+            // 8. Módulo de Oficinas Administrativas / Privado (Top Right en plano)
+            const offX = 23.5, offZ = -4.8, offW = 5.0, offD = 3.6;
+            const offWallH = new THREE.Mesh(new THREE.BoxGeometry(offW, H, 0.12), wallMaterial);
+            offWallH.position.set(offX, H / 2, offZ + offD / 2);
+            addWall(offWallH);
+
+            const offWallV = new THREE.Mesh(new THREE.BoxGeometry(0.12, H, offD), wallMaterial);
+            offWallV.position.set(offX - offW / 2, H / 2, offZ);
+            addWall(offWallV);
+
+            // 9. Columnas estructurales de carga en las 11 crujías oficiales
+            const cotas = [5.31, 5.30, 5.29, 5.30, 5.30, 5.30, 5.30, 5.29, 5.71, 5.00, 1.20];
             const colGeo = new THREE.BoxGeometry(0.40, H, 0.40);
             const colMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 });
-            for (let i = 0; i <= 10; i++) {
-                const posX = -L / 2 + 1.2 + (i * 5.30);
-                if (posX < L / 2 - 1.0) {
+
+            let curX = -L / 2;
+            for (let i = 0; i < cotas.length; i++) {
+                curX += cotas[i];
+                if (curX < L / 2 - 0.5) {
                     const col1 = new THREE.Mesh(colGeo, colMat);
-                    col1.position.set(posX, H / 2, -W / 2 + 0.3);
+                    col1.position.set(curX, H / 2, -W / 2 + 0.25);
+                    col1.castShadow = true;
                     groupPB.add(col1);
 
                     const col2 = new THREE.Mesh(colGeo, colMat);
-                    col2.position.set(posX, H / 2, W / 2 - 0.3);
+                    col2.position.set(curX, H / 2, -0.5);
+                    col2.castShadow = true;
                     groupPB.add(col2);
                 }
             }
@@ -1028,70 +1132,79 @@
         function construirPrimerNivel() {
             const { lengthX: L, widthZ: W, heightEntrepiso: H, wallThickness: t } = STORE_GEOMETRY;
 
-            // Losa de entrepiso a Y = 3.80 m (mitad este diáfana con vano central de escalera)
-            const mezzL = L * 0.55;
-            const mezzGeo = new THREE.BoxGeometry(mezzL, 0.25, W);
-            const mezzFloor = new THREE.Mesh(mezzGeo, floorMaterial);
-            mezzFloor.position.set(L / 2 - mezzL / 2, H, 0);
+            // 1. Losa de entrepiso a Y = 3.80 m
+            const mezzFloor = new THREE.Mesh(new THREE.PlaneGeometry(L, W), floorMaterial);
+            mezzFloor.rotation.x = -Math.PI / 2;
+            mezzFloor.position.set(0, H, 0);
             mezzFloor.receiveShadow = true;
             groupN1.add(mezzFloor);
 
-            // Proyección del plano 2D N1 sobre el suelo de N1
+            // 2. Proyección de plano N1 1:1 sobre todo el entrepiso calibrada
             meshFloorN1 = new THREE.Mesh(
-                new THREE.PlaneGeometry(mezzL, W),
-                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.28, depthWrite: false, map: texN1 })
+                new THREE.PlaneGeometry(L, W),
+                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.90, depthWrite: false, map: texN1 })
             );
             meshFloorN1.rotation.x = -Math.PI / 2;
-            meshFloorN1.position.set(L / 2 - mezzL / 2, H + 0.13, 0);
+            meshFloorN1.position.set(0, H + 0.012, 0);
             groupN1.add(meshFloorN1);
 
-            // Barandales de cristal perimetrales del vano
-            const railGeo = new THREE.BoxGeometry(0.08, 0.95, W - 1.2);
-            const railMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, roughness: 0.1 });
-            const railing = new THREE.Mesh(railGeo, railMat);
-            railing.position.set(L / 2 - mezzL, H + 0.48, 0);
-            groupN1.add(railing);
+            // 3. Vano de la escalera con barandales de seguridad
+            const railMat = new THREE.MeshPhysicalMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.45, roughness: 0.1 });
+            const rail1 = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.95, 0.06), railMat);
+            rail1.position.set(-24.5 + 1.75, H + 0.48, 3.2 - 0.7);
+            groupN1.add(rail1);
 
-            // Muros superiores N1 a 2.03m (llegando a 5.83m)
+            const rail2 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.95, 1.6), railMat);
+            rail2.position.set(-24.5 + 3.5, H + 0.48, 3.2);
+            groupN1.add(rail2);
+
+            // 4. Muros superiores de doble altura (hasta 5.83 m)
             const hSup = STORE_GEOMETRY.heightRoof - H;
             const wallSupBack = new THREE.Mesh(new THREE.BoxGeometry(L, hSup, t), wallMaterial);
             wallSupBack.position.set(0, H + hSup / 2, -W / 2);
             groupN1.add(wallSupBack);
+
+            const wallSupLeft = new THREE.Mesh(new THREE.BoxGeometry(t, hSup, W), wallMaterial);
+            wallSupLeft.position.set(-L / 2, H + hSup / 2, 0);
+            groupN1.add(wallSupLeft);
+
+            const wallSupRight = new THREE.Mesh(new THREE.BoxGeometry(t, hSup, W), wallMaterial);
+            wallSupRight.position.set(L / 2, H + hSup / 2, 0);
+            groupN1.add(wallSupRight);
         }
 
         function construirNaveOutlet() {
             const { lengthX: L, widthZ: W, heightRoof: HR } = STORE_GEOMETRY;
 
-            // Proyección del plano PLANO OUTLET sobre el suelo
+            // 1. Proyección de PLANO OUTLET sobre el suelo (escala 1:1 completa)
             meshFloorOutlet = new THREE.Mesh(
                 new THREE.PlaneGeometry(L, W),
-                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.32, depthWrite: false, map: texOutlet })
+                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.92, depthWrite: false, map: texOutlet })
             );
             meshFloorOutlet.rotation.x = -Math.PI / 2;
             meshFloorOutlet.position.y = 0.009;
             groupOutlet.add(meshFloorOutlet);
 
-            // 7 Vigas Transversales de Acero ("PROYECCIÓN DE VIGA") a lo largo de los 54.40m
+            // 2. 7 Vigas Transversales de Acero ("PROYECCIÓN DE VIGA") calibradas exactamente a las cotas del plano
+            const beamPositionsX = [-19.82, -12.50, -5.16, 2.22, 9.26, 16.64, 23.93];
             const beamGeo = new THREE.BoxGeometry(0.40, 0.60, W);
-            const beamMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5, metalness: 0.6 });
-            const beamSpacing = L / 8;
+            const beamMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.7 });
 
-            for (let i = 1; i <= 7; i++) {
-                const posX = -L / 2 + (i * beamSpacing);
+            beamPositionsX.forEach(posX => {
                 const beam = new THREE.Mesh(beamGeo, beamMat);
                 beam.position.set(posX, HR - 0.30, 0);
                 beam.castShadow = true;
                 groupOutlet.add(beam);
-            }
+            });
 
-            // Delimitación con recuadros tenues de las 6 zonas de exhibición oficiales
+            // 3. 6 Zonas de Exhibición Oficiales con contornos y títulos espaciales
             const zonas = [
-                { nombre: "Área de Cuadros y Espejos", x: -22, z: -4, w: 7, d: 4, col: 0x38bdf8 },
-                { nombre: "Área de Blancos", x: -14, z: 2.5, w: 8, d: 5, col: 0xa78bfa },
-                { nombre: "Área de Sillas", x: -5, z: -3.5, w: 8, d: 4.5, col: 0x34d399 },
-                { nombre: "Área de Mesas de Centro", x: 4, z: 2, w: 8, d: 5, col: 0xfbbf24 },
-                { nombre: "Área de Tapetes", x: 13, z: -3.5, w: 8, d: 5, col: 0xf472b6 },
-                { nombre: "Área General de Exhibición", x: 21, z: 1.5, w: 9, d: 6, col: 0x60a5fa }
+                { nombre: "Área de Tapetes", x: -23.0, z: -3.0, w: 7.5, d: 5.5, col: 0xf472b6 },
+                { nombre: "Área de Mesas de Centro", x: -20.5, z: 3.0, w: 8.5, d: 5.5, col: 0xfbbf24 },
+                { nombre: "Área de Sillas", x: -12.5, z: -1.0, w: 9.0, d: 7.5, col: 0x34d399 },
+                { nombre: "Área de Blancos", x: -2.0, z: 0.5, w: 8.5, d: 8.5, col: 0xa78bfa },
+                { nombre: "Área General de Exhibición", x: 10.0, z: 0.0, w: 14.0, d: 11.0, col: 0x60a5fa },
+                { nombre: "Área de Cuadros y Espejos", x: 23.5, z: -3.5, w: 6.5, d: 5.5, col: 0x38bdf8 }
             ];
 
             zonas.forEach(z => {
@@ -1099,13 +1212,13 @@
                 const zMat = new THREE.MeshBasicMaterial({ color: z.col, transparent: true, opacity: 0.12, depthWrite: false });
                 const zMesh = new THREE.Mesh(zGeo, zMat);
                 zMesh.rotation.x = -Math.PI / 2;
-                zMesh.position.set(z.x, 0.011, z.z);
+                zMesh.position.set(z.x, 0.012, z.z);
                 groupOutlet.add(zMesh);
 
                 const borderGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(z.w, 0.01, z.d));
-                const borderMat = new THREE.LineBasicMaterial({ color: z.col, transparent: true, opacity: 0.65 });
+                const borderMat = new THREE.LineBasicMaterial({ color: z.col, transparent: true, opacity: 0.75, linewidth: 2 });
                 const border = new THREE.LineSegments(borderGeo, borderMat);
-                border.position.set(z.x, 0.013, z.z);
+                border.position.set(z.x, 0.014, z.z);
                 groupOutlet.add(border);
             });
         }
@@ -1114,7 +1227,7 @@
         construirPrimerNivel();
         construirNaveOutlet();
 
-        // 5. SELECTOR DE MODOS INTERACTIVOS (4 MODOS OFICIALES)
+        // 5. SELECTOR DE MODOS (4 MODOS INTERACTIVOS)
         function aplicarModo(modo) {
             AppState.activeMode = modo;
             document.querySelectorAll('.floor-tabs .tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -1125,19 +1238,17 @@
                 groupN1.visible = false;
                 groupOutlet.visible = false;
                 groupN1.position.y = 0;
-                if (meshFloorPB) meshFloorPB.visible = true;
                 controls.target.set(0, 1.5, 0);
-                camera.position.set(24, 22, 28);
-                mostrarToast("Modo: Planta Baja (PB) - Cotas 54.40m x 13.47m");
+                camera.position.set(0, 32, 28);
+                mostrarToast("Modo: Planta Baja (PB) - 54.40m x 13.47m");
             } else if (modo === "N1") {
                 document.getElementById('btn-mode-n1').classList.add('active');
                 groupPB.visible = true;
                 groupN1.visible = true;
                 groupOutlet.visible = false;
                 groupN1.position.y = 0;
-                if (meshFloorN1) meshFloorN1.visible = true;
-                controls.target.set(STORE_GEOMETRY.lengthX * 0.25, STORE_GEOMETRY.heightEntrepiso + 1.2, 0);
-                camera.position.set(STORE_GEOMETRY.lengthX * 0.25 + 16, STORE_GEOMETRY.heightEntrepiso + 14, 20);
+                controls.target.set(0, STORE_GEOMETRY.heightEntrepiso + 1.5, 0);
+                camera.position.set(0, STORE_GEOMETRY.heightEntrepiso + 30, 28);
                 mostrarToast("Modo: Primer Nivel (N1) - Entrepiso 3.80m");
             } else if (modo === "OUTLET") {
                 document.getElementById('btn-mode-outlet').classList.add('active');
@@ -1145,19 +1256,17 @@
                 groupN1.visible = false;
                 groupOutlet.visible = true;
                 groupN1.position.y = 0;
-                if (meshFloorOutlet) meshFloorOutlet.visible = true;
                 controls.target.set(0, 1.5, 0);
-                camera.position.set(28, 24, 30);
-                mostrarToast("Modo: Nave Outlet - 7 Vigas y Zonas de Exhibición");
+                camera.position.set(0, 34, 30);
+                mostrarToast("Modo: Nave Outlet - 7 Vigas & Zonas Comerciales");
             } else if (modo === "ALL") {
                 document.getElementById('btn-mode-all').classList.add('active');
                 groupPB.visible = true;
                 groupN1.visible = true;
                 groupOutlet.visible = true;
-                // Vista Explotada: elevar Nivel 1 a Y = 5.50 m
                 groupN1.position.y = 5.50;
                 controls.target.set(0, 3.5, 0);
-                camera.position.set(36, 34, 40);
+                camera.position.set(28, 32, 36);
                 mostrarToast("Modo: Vista Explotada (Todas las Plantas)");
             }
         }
@@ -1167,11 +1276,9 @@
         document.getElementById('btn-mode-outlet').addEventListener('click', () => aplicarModo("OUTLET"));
         document.getElementById('btn-mode-all').addEventListener('click', () => aplicarModo("ALL"));
 
-        // Inicializar en Planta Baja
         aplicarModo("PB");
 
-        // 6. CONTROL DEL SLIDER DE MUROS DINÁMICOS
-        const wallSlider = document.getElementById('wall-height-slider');
+                const wallSlider = document.getElementById('wall-height-slider');
         const wallSliderVal = document.getElementById('wall-slider-val');
         wallSlider.addEventListener('input', (e) => {
             const val = parseFloat(e.target.value) / 100;
@@ -1179,20 +1286,20 @@
             wallSliderVal.textContent = Math.round(val * 100) + '%';
 
             const scaleY = Math.max(0.02, val);
-            groupPB.children.forEach(w => {
-                if (w.isMesh && w.geometry && w.geometry.type === 'BoxGeometry' && w.position.y > 0.1) {
-                    w.scale.y = scaleY;
-                    w.position.y = (STORE_GEOMETRY.heightEntrepiso * scaleY) / 2;
-                }
+            pbWalls.forEach(w => {
+                w.scale.y = scaleY;
+                const baseH = w.userData.baseH || STORE_GEOMETRY.heightEntrepiso;
+                w.position.y = (baseH * scaleY) / 2;
             });
             groupN1.children.forEach(w => {
-                w.visible = val > 0.25;
+                if (w !== meshFloorN1) w.visible = val > 0.25;
             });
             groupOutlet.children.forEach(w => {
                 if (w.isMesh && w.geometry && w.geometry.type === 'BoxGeometry' && w.position.y > 2.0) {
                     w.visible = val > 0.35;
                 }
             });
+
         });
 
         // 7. CARGADOR DE MODELOS 3D (.GLB) CON SEMÁFORO DE VENTAS ULTRABRILLANTE (+20%)
@@ -1221,7 +1328,7 @@
             plane.position.y = 0.014;
             group.add(plane);
 
-            // Contorno ultra-nítido
+            // Contorno nítido
             const edgesGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(ancho, 0.01, fondo));
             const lineMat = new THREE.LineBasicMaterial({
                 color: colorHex,
@@ -1250,11 +1357,11 @@
             const dimZ = prod.dimensiones.z;
             const dimY = prod.dimensiones.y;
 
-            // 1. Huella y semáforo 3D
+            // Huella y semáforo 3D
             const footprint = crearSemaforoVentasFootprint(dimX, dimZ, prod.semaforo_ventas);
             rootGroup.add(footprint);
 
-            // 2. Modelo 3D .glb
+            // Modelo 3D .glb
             if (prod.glb_url) {
                 gltfLoader.load(
                     prod.glb_url,
@@ -1290,7 +1397,7 @@
                 );
             }
 
-            // Posicionamiento
+            // Posicionamiento en sala
             if (customTransform) {
                 rootGroup.position.set(customTransform.x, customTransform.y || 0, customTransform.z);
                 rootGroup.rotation.y = customTransform.r || 0;
@@ -1371,7 +1478,6 @@
 
             raycaster.setFromCamera(mouse, camera);
 
-            // Filtrar mallas de muebles directas sin incluir semáforos ni planos de piso
             const candidateMeshes = [];
             AppState.placedItems.forEach(item => {
                 item.threeObj.traverse(child => {
@@ -1430,7 +1536,7 @@
             }
         });
 
-        // 9. MICRO-DESPLAZAMIENTO Y ADOSAMIENTO INTELIGENTE CON TOPE AL BORDE DEL COLCHÓN
+        // 9. MICRO-DESPLAZAMIENTO Y ADOSAMIENTO INTELIGENTE CON TOPE A COLCHÓN
         const STEP_SIZE = 0.05;
 
         function moverSeleccionado(dx, dz) {
@@ -1462,7 +1568,7 @@
             mostrarToast("Mueble retirado de la sala");
         });
 
-        // ADOSAMIENTO INTELIGENTE (🧲 Botón Pegar con tope a colchón de camas)
+        // Adosamiento Inteligente con tope a colchón
         document.getElementById('btn-snap-dock').addEventListener('click', () => {
             if (!AppState.selectedItem) return;
             const current = AppState.selectedItem;
@@ -1497,26 +1603,21 @@
                 const isClosestCama = closest.nombre.toLowerCase().includes("cama");
 
                 if (isCurrentBuro && isClosestCama) {
-                    // Adosar buró al costado del colchón de la cama
                     const sign = dx > 0 ? 1 : -1;
-                    // Borde exacto del marco del colchón
                     current.threeObj.position.x = closest.threeObj.position.x + sign * ((cloDimX / 2) + (curDimX / 2) - 0.02);
-                    // Alinear con cabecera en el eje Z
                     current.threeObj.position.z = closest.threeObj.position.z - (cloDimZ / 2) + (curDimZ / 2) + 0.35;
                 } else if (Math.abs(dx) > Math.abs(dz)) {
-                    // Adosamiento lateral estándar en X
                     const sign = dx > 0 ? 1 : -1;
                     current.threeObj.position.x = closest.threeObj.position.x + sign * ((cloDimX / 2) + (curDimX / 2));
                     current.threeObj.position.z = closest.threeObj.position.z;
                 } else {
-                    // Adosamiento frontal/posterior en Z
                     const sign = dz > 0 ? 1 : -1;
                     current.threeObj.position.z = closest.threeObj.position.z + sign * ((cloDimZ / 2) + (curDimZ / 2));
                     current.threeObj.position.x = closest.threeObj.position.x;
                 }
 
                 selectionBox.setFromObject(current.threeObj);
-                mostrarToast(`🧲 Adosado con tope a "${closest.nombre}"`);
+                mostrarToast(`🧲 Adosado a "${closest.nombre}"`);
             } else {
                 mostrarToast("Acerca más el mueble al elemento deseado para adosar.");
             }
@@ -1611,7 +1712,7 @@
             renderizarCatalogo(activeCat, e.target.value.toLowerCase().trim());
         });
 
-        // 11. GOOGLE SHEETS EN TIEMPO REAL PARA COLOSIO
+        // 11. GOOGLE SHEETS EN TIEMPO REAL
         async function fetchGoogleSheetsData() {
             const { spreadsheetId, sheetName } = AppState.sheetsConfig;
             const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
@@ -1628,7 +1729,7 @@
                     document.getElementById('live-status-text').textContent = `Google Sheets Colosio: ${new Date().toLocaleTimeString()} (Polling 30s)`;
                 }
             } catch (err) {
-                console.info("[Sheets Colosio] Catálogo local activo.");
+                console.info("[Sheets Colosio] Modo catálogo local activo.");
             }
         }
 
@@ -1915,7 +2016,7 @@
         });
 
         document.getElementById('btn-cam-iso').addEventListener('click', () => {
-            camera.position.set(28, 28, 34);
+            camera.position.set(30, 26, 32);
             controls.target.set(0, 1.5, 0);
         });
 
@@ -1962,14 +2063,14 @@
             renderizarCatalogo();
             verificarHashURL();
 
-            // Cargar mobiliario inicial calibrado
+            // Cargar mobiliario inicial en zonas comerciales
             setTimeout(() => {
                 if (AppState.placedItems.length === 0) {
-                    colocarProductoEnTienda('prod-028', { x: -16, y: 0, z: -2, r: 0 }); // Sofá Santa Fe
-                    colocarProductoEnTienda('prod-027', { x: -10, y: 0, z: -2, r: 0 }); // Sofá Rennes
-                    colocarProductoEnTienda('prod-018', { x: 4, y: 0, z: 2.2, r: 0 });  // Cama Santa Fe
-                    colocarProductoEnTienda('prod-006', { x: 6.4, y: 0, z: 2.2, r: 0 });// Buró Africa
-                    colocarProductoEnTienda('prod-003', { x: 16, y: 0, z: -3, r: 0 });  // Bufetera Madrid
+                    colocarProductoEnTienda('prod-028', { x: 12, y: 0, z: -2, r: 0 });  // Sofá Santa Fe
+                    colocarProductoEnTienda('prod-027', { x: 6, y: 0, z: -2, r: 0 });   // Sofá Rennes
+                    colocarProductoEnTienda('prod-018', { x: -4, y: 0, z: 2.2, r: 0 }); // Cama Santa Fe
+                    colocarProductoEnTienda('prod-006', { x: -1.6, y: 0, z: 2.2, r: 0 });// Buró Africa
+                    colocarProductoEnTienda('prod-003', { x: -12, y: 0, z: -3, r: 0 }); // Bufetera Madrid
                 }
             }, 400);
         });
