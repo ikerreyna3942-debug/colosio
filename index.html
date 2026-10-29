@@ -585,6 +585,176 @@
     }
   }
 
+
+/* =====================================================================
+   ZONAS INVISIBLES Y SETS DE EXHIBICIÓN CASA CREATA (HUD & MENÚ)
+   ===================================================================== */
+.zone-hud-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  background: rgba(22, 20, 18, 0.82);
+  border: 1px solid rgba(235, 216, 195, 0.28);
+  border-radius: 20px;
+  font-size: 11.5px;
+  color: #f4efe9;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  cursor: pointer;
+  transition: all .2s ease;
+  user-select: none;
+}
+.zone-hud-pill:hover {
+  background: rgba(35, 31, 28, 0.95);
+  border-color: rgba(235, 216, 195, 0.55);
+  transform: translateY(-1px);
+}
+.zone-hud-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d4af37;
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.7);
+  flex-shrink: 0;
+  transition: background .2s ease;
+}
+.zone-hud-pill.highlight .zone-hud-dot {
+  background: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.9);
+}
+
+.sets-dropdown-popover {
+  position: absolute;
+  top: 56px;
+  left: 20px;
+  width: 350px;
+  max-height: 520px;
+  background: rgba(18, 16, 14, 0.96);
+  border: 1px solid rgba(235, 216, 195, 0.25);
+  border-radius: 12px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 18px 45px rgba(0,0,0,0.65);
+  z-index: 1200;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeInDown .2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sets-dropdown-popover.open { display: flex; }
+
+.sets-menu-header {
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sets-menu-header-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #ebd8c3;
+  text-transform: uppercase;
+}
+.sets-menu-header-sub {
+  font-size: 10px;
+  color: #a8a29a;
+}
+.sets-tabs-bar {
+  display: flex;
+  padding: 8px 12px;
+  gap: 6px;
+  background: rgba(0,0,0,0.25);
+}
+.sets-tab-btn {
+  flex: 1;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  color: #bbb3a8;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.sets-tab-btn:hover { color: #f0ece6; background: rgba(255,255,255,0.08); }
+.sets-tab-btn.active {
+  background: #ebd8c3;
+  color: #1a1917;
+  border-color: #ebd8c3;
+}
+.sets-search-box {
+  padding: 6px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.sets-search-input {
+  width: 100%;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 11px;
+  outline: none;
+  box-sizing: border-box;
+}
+.sets-search-input:focus { border-color: #ebd8c3; background: rgba(255,255,255,0.09); }
+.sets-list-container {
+  overflow-y: auto;
+  max-height: 360px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sets-item-card {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.sets-item-card:hover {
+  background: rgba(235, 216, 195, 0.12);
+  border-color: rgba(235, 216, 195, 0.35);
+  transform: translateX(2px);
+}
+.sets-item-card.active-set {
+  background: rgba(235, 216, 195, 0.18);
+  border-color: #ebd8c3;
+}
+.sets-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3px;
+}
+.sets-item-num {
+  font-weight: 700;
+  font-size: 12px;
+  color: #ebd8c3;
+}
+.sets-item-cat {
+  font-size: 10px;
+  color: #a8a29a;
+  background: rgba(0,0,0,0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.sets-item-finish {
+  font-size: 10px;
+  color: #d1c8bd;
+  line-height: 1.3;
+}
+.sets-item-finish b {
+  color: #f7eedf;
+}
+
 </style>
 </head>
 <body>
@@ -593,6 +763,11 @@
 <!-- 1. Cápsula Superior Izquierda: CASA CREATA + [💾 Distribuciones] + [🛋️ + Catálogo] -->
 <div id="topBarLeft">
   <span class="brand-title">COLOSIO OUTLET</span>
+  <button class="btn-top-action" id="btnToggleSets" title="Explorar los 51 Sets y Zonas de Casa Creata">📍 Sets (Zonas) ▾</button>
+  <div id="activeZoneHud" class="zone-hud-pill" title="Zona actual en el plano · Clic para ver opciones">
+    <span class="zone-hud-dot"></span>
+    <span id="activeZoneTxt">Set 1 · Lounge</span>
+  </div>
   <button class="btn-top-action btn-save-action" id="btnSaveProcess" title="Guardar proceso del plano y diseño en curso (Ctrl+S)">💾 Guardar</button>
   <button class="btn-top-action" id="btnOpenDistrib" title="Ver y cargar distribuciones guardadas">📁 Distribuciones</button>
   
@@ -662,6 +837,23 @@
 
 
 <!-- 3. CATÁLOGO DESPLEGABLE HACIA ABAJO (CERO AMONTONAMIENTO) -->
+
+<!-- Menú Flotante Desplegable para [📍 Sets / Zonas Oficiales] -->
+<div id="setsDropdownMenu" class="sets-dropdown-popover">
+  <div class="sets-menu-header">
+    <div class="sets-menu-header-title">ZONAS Y SETS DE EXHIBICIÓN</div>
+    <div class="sets-menu-header-sub">51 Sets Oficiales · Acabados de Muros y Mobiliario</div>
+  </div>
+  <div class="sets-tabs-bar">
+    <button class="sets-tab-btn active" data-tab="PB">Planta Baja (Sets 1-21)</button>
+    <button class="sets-tab-btn" data-tab="N1">Planta Alta (Sets 22-51)</button>
+  </div>
+  <div class="sets-search-box">
+    <input type="text" id="setsSearchInput" placeholder="🔍 Buscar por Set, mueble o acabado..." class="sets-search-input">
+  </div>
+  <div class="sets-list-container" id="setsListContainer"></div>
+</div>
+
 <div id="catalogBackdrop"></div>
 <div id="catalogDropdown">
   <div class="catalog-top-bar">
@@ -748,6 +940,10 @@
       <div class="ficha-row">
         <span class="ficha-label">PROVEEDOR:</span>
         <span class="ficha-val" id="fProveedor">ARTEX</span>
+      </div>
+      <div class="ficha-row">
+        <span class="ficha-label">ZONA / SET:</span>
+        <span class="ficha-val" id="fZona" style="color:#ebd8c3;font-weight:600">-</span>
       </div>
     </div>
 
@@ -968,7 +1164,7 @@ const M = {
   glass: new THREE.MeshStandardMaterial({ color: 0x93c5fd, roughness:0.1, transparent:true, opacity:0.35, side:THREE.DoubleSide, depthWrite:false }),
   stair: new THREE.MeshStandardMaterial({ color: 0xd8d2c7, roughness:0.85 }),
   edge: new THREE.LineBasicMaterial({ color: 0x5a5650, transparent:true, opacity:0.35 }),
-  floor: new THREE.MeshStandardMaterial({ color: 0x181a20, roughness:0.95, metalness:0.05 })
+  floor: new THREE.MeshStandardMaterial({ color: 0xf5f5f7, roughness:0.95, metalness:0.02 })
 };
 
 // Almacén global de muros para control del Slider [🧱 Muros]
@@ -1006,19 +1202,32 @@ const targetY = { PB:0, N1:H_PB, OUTLET:0 };
 let activeWorkingLevel = 'PB';
 let currentFloorMode = 'exploded';
 
+let mFloorPB = null, mFloorN1 = null, mFloorOutlet = null;
+
 // Carga de Texturas de Planos 2D Calibrados con Máxima Nitidez
 const textureLoader = new THREE.TextureLoader();
-function setupFloorTex(url){
-  const t = textureLoader.load(url);
+function setupFloorTex(url, getMesh){
+  const t = textureLoader.load(url, (loadedTex) => {
+    loadedTex.colorSpace = THREE.SRGBColorSpace;
+    loadedTex.minFilter = THREE.LinearFilter;
+    loadedTex.magFilter = THREE.LinearFilter;
+    loadedTex.generateMipmaps = false;
+    loadedTex.needsUpdate = true;
+    const mesh = (typeof getMesh === 'function') ? getMesh() : getMesh;
+    if(mesh && mesh.material){
+      mesh.material.map = loadedTex;
+      mesh.material.needsUpdate = true;
+    }
+  });
   t.colorSpace = THREE.SRGBColorSpace;
   t.minFilter = THREE.LinearFilter;
   t.magFilter = THREE.LinearFilter;
   t.generateMipmaps = false;
   return t;
 }
-const texPB = setupFloorTex('PLANOS/plano_pb.png');
-const texN1 = setupFloorTex('PLANOS/plano_n1.png');
-const texOutlet = setupFloorTex('PLANOS/plano_outlet.png');
+const texPB = setupFloorTex('PLANOS/plano_pb.png', () => mFloorPB);
+const texN1 = setupFloorTex('PLANOS/plano_n1.png', () => mFloorN1);
+const texOutlet = setupFloorTex('PLANOS/plano_outlet.png', () => mFloorOutlet);
 
 function buildBuilding(){
   const L = STORE_LENGTH_X;
@@ -1041,7 +1250,7 @@ function buildBuilding(){
   grpPB.add(floorMeshPB);
 
   // Malla técnica de proyección 2D
-  const mFloorPB = new THREE.Mesh(
+  mFloorPB = new THREE.Mesh(
     new THREE.PlaneGeometry(L, W),
     new THREE.MeshBasicMaterial({ color: 0xffffff, map: texPB, depthWrite: true })
   );
@@ -1196,7 +1405,7 @@ function buildBuilding(){
   floorMeshN1.receiveShadow = true;
   grpN1.add(floorMeshN1);
 
-  const mFloorN1 = new THREE.Mesh(
+  mFloorN1 = new THREE.Mesh(
     new THREE.PlaneGeometry(L, W),
     new THREE.MeshBasicMaterial({ color: 0xffffff, map: texN1, depthWrite: true })
   );
@@ -1242,7 +1451,7 @@ function buildBuilding(){
   floorMeshOutlet.receiveShadow = true;
   grpOutlet.add(floorMeshOutlet);
 
-  const mFloorOutlet = new THREE.Mesh(
+  mFloorOutlet = new THREE.Mesh(
     new THREE.PlaneGeometry(L, W),
     new THREE.MeshBasicMaterial({ color: 0xffffff, map: texOutlet, depthWrite: true })
   );
@@ -2403,6 +2612,16 @@ function selectFurniture(furn){
   }
 
   document.getElementById('cardProdName').textContent = item.short_name || item.name;
+  const fZonaElem = document.getElementById('fZona');
+  if(fZonaElem && typeof getSetAtWorldPoint === 'function'){
+    const curSet = getSetAtWorldPoint(furn.position.x, furn.position.z, furn.userData.level);
+    if(curSet){
+      fZonaElem.textContent = `Set ${curSet.num} · ${curSet.category}`;
+      updateZoneHud(curSet);
+    } else {
+      fZonaElem.textContent = (furn.userData.level === 'N1') ? 'Planta Alta' : 'Planta Baja';
+    }
+  }
   document.getElementById('fNombre').textContent = item.name;
   document.getElementById('fMedidas').textContent = `${item.dim_cm[0]} × ${item.dim_cm[1]} × ${item.dim_cm[2]} cm (${(item.dim_cm[0]/100).toFixed(2)}×${(item.dim_cm[1]/100).toFixed(2)}m)`;
   document.getElementById('fSku').textContent = item.sku;
@@ -3771,6 +3990,173 @@ async function fetchLiveSheetsData(){
 }
 fetchLiveSheetsData();
 setInterval(fetchLiveSheetsData, 30000);
+
+
+
+// =====================================================================
+// CONTROLADOR DEL MENÚ Y NAVEGADOR DE SETS (ZONAS INVISIBLES)
+// =====================================================================
+const btnToggleSets = document.getElementById('btnToggleSets');
+const setsDropdownMenu = document.getElementById('setsDropdownMenu');
+const setsListContainer = document.getElementById('setsListContainer');
+const setsSearchInput = document.getElementById('setsSearchInput');
+const activeZoneHud = document.getElementById('activeZoneHud');
+let activeSetsTab = 'PB';
+
+function renderSetsList(filterTxt = ''){
+  if(!setsListContainer) return;
+  setsListContainer.innerHTML = '';
+  const filter = filterTxt.toLowerCase().trim();
+  
+  const setNums = Object.keys(CASA_CREATA_SETS).map(Number).sort((a,b) => a - b);
+  let renderedCount = 0;
+  
+  setNums.forEach(num => {
+    const s = CASA_CREATA_SETS[num];
+    if(s.level !== activeSetsTab) return;
+    
+    const acStr = (s.acabados || []).join(' ');
+    const searchMatch = !filter || 
+      `set ${s.num}`.includes(filter) || 
+      s.category.toLowerCase().includes(filter) || 
+      acStr.toLowerCase().includes(filter) ||
+      (s.muebles || []).join(' ').toLowerCase().includes(filter);
+      
+    if(!searchMatch) return;
+    
+    renderedCount++;
+    const card = document.createElement('div');
+    card.className = 'sets-item-card';
+    const mainFinish = (s.acabados && s.acabados.length > 0) ? s.acabados.join(' · ') : 'Showroom Sidney Beige Yeso';
+    
+    card.innerHTML = `
+      <div class="sets-item-top">
+        <span class="sets-item-num">SET ${s.num}</span>
+        <span class="sets-item-cat">${s.category || 'Exhibición'}</span>
+      </div>
+      <div class="sets-item-finish">
+        <b>Pared:</b> ${mainFinish}
+      </div>
+    `;
+    
+    card.addEventListener('click', () => {
+      focusOnSet(s);
+      if(setsDropdownMenu) setsDropdownMenu.classList.remove('open');
+      if(btnToggleSets) btnToggleSets.classList.remove('active');
+    });
+    
+    setsListContainer.appendChild(card);
+  });
+  
+  if(renderedCount === 0){
+    setsListContainer.innerHTML = '<div style="padding:16px;text-align:center;color:#888;font-size:11px;">No se encontraron Sets</div>';
+  }
+}
+
+function focusOnSet(setObj){
+  if(!setObj) return;
+  // Cambiar piso si es necesario
+  if(currentFloorMode !== setObj.level && currentFloorMode !== 'exploded'){
+    setFloorMode(setObj.level);
+  }
+  
+  const targetX = setObj.pos[0];
+  const targetZ = setObj.pos[1];
+  const targetY = (setObj.level === 'N1') ? H_PB + 1.2 : 1.2;
+  
+  // Animar cámara suavemente hacia el Set
+  const startCam = camera.position.clone();
+  const startTgt = controls.target.clone();
+  const endTgt = new THREE.Vector3(targetX, targetY, targetZ);
+  const endCam = new THREE.Vector3(targetX + 3.8, targetY + 3.2, targetZ + 4.5);
+  
+  let animProgress = 0;
+  function animSetFly(){
+    animProgress += 0.04;
+    if(animProgress > 1) animProgress = 1;
+    const ease = 0.5 - Math.cos(animProgress * Math.PI) / 2;
+    camera.position.lerpVectors(startCam, endCam, ease);
+    controls.target.lerpVectors(startTgt, endTgt, ease);
+    controls.update();
+    if(animProgress < 1){
+      requestAnimationFrame(animSetFly);
+    } else {
+      updateZoneHud(setObj);
+    }
+  }
+  animSetFly();
+  updateZoneHud(setObj);
+}
+
+if(btnToggleSets){
+  btnToggleSets.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = setsDropdownMenu.classList.toggle('open');
+    btnToggleSets.classList.toggle('active', isOpen);
+    if(isOpen){
+      if(storeDropdownMenu) storeDropdownMenu.classList.remove('open');
+      if(murosSliderWrap) murosSliderWrap.classList.remove('open');
+      renderSetsList(setsSearchInput ? setsSearchInput.value : '');
+    }
+  });
+}
+
+if(activeZoneHud){
+  activeZoneHud.addEventListener('click', () => {
+    if(btnToggleSets) btnToggleSets.click();
+  });
+}
+
+document.querySelectorAll('.sets-tab-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    document.querySelectorAll('.sets-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeSetsTab = btn.dataset.tab;
+    renderSetsList(setsSearchInput ? setsSearchInput.value : '');
+  });
+});
+
+if(setsSearchInput){
+  setsSearchInput.addEventListener('input', (e) => {
+    renderSetsList(e.target.value);
+  });
+}
+
+// Cerrar al hacer clic afuera
+document.addEventListener('click', (e) => {
+  if(setsDropdownMenu && setsDropdownMenu.classList.contains('open')){
+    if(!setsDropdownMenu.contains(e.target) && e.target !== btnToggleSets){
+      setsDropdownMenu.classList.remove('open');
+      if(btnToggleSets) btnToggleSets.classList.remove('active');
+    }
+  }
+});
+
+// Actualizar HUD al mover el cursor por el suelo
+const zoneRay = new THREE.Raycaster();
+const zoneMouse = new THREE.Vector2();
+let lastZoneCheck = 0;
+
+window.addEventListener('pointermove', (e) => {
+  const now = Date.now();
+  if(now - lastZoneCheck < 120) return; // Limitar frecuencia a ~8 fps para alto rendimiento
+  lastZoneCheck = now;
+  
+  zoneMouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  zoneMouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  zoneRay.setFromCamera(zoneMouse, camera);
+  
+  const fm = floorMeshes[activeWorkingLevel] || floorMeshes['PB'];
+  if(fm){
+    const hits = zoneRay.intersectObject(fm, false);
+    if(hits.length > 0){
+      const setObj = getSetAtWorldPoint(hits[0].point.x, hits[0].point.z, activeWorkingLevel);
+      if(setObj){
+        updateZoneHud(setObj);
+      }
+    }
+  }
+});
 
 </script>
 
