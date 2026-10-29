@@ -31,7 +31,7 @@
   html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;font-family:"Inter","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
   #c{position:fixed;inset:0;display:block;touch-action:none;-webkit-touch-callout:none;user-select:none}
 
-  /* 1. Cápsula Superior Izquierda: COLOSIO OUTLET + [💾 Distribuciones] + [+ Catálogo] */
+  /* 1. Cápsula Superior Izquierda: CASA CREATA + [💾 Distribuciones] + [+ Catálogo] */
   #topBarLeft{
     position:fixed;top:14px;left:18px;display:flex;align-items:center;gap:10px;
     background:var(--bar-bg);backdrop-filter:blur(14px);padding:6px 14px;border-radius:999px;
@@ -590,7 +590,7 @@
 <body>
 <canvas id="c"></canvas>
 
-<!-- 1. Cápsula Superior Izquierda: COLOSIO OUTLET + [💾 Distribuciones] + [🛋️ + Catálogo] -->
+<!-- 1. Cápsula Superior Izquierda: CASA CREATA + [💾 Distribuciones] + [🛋️ + Catálogo] -->
 <div id="topBarLeft">
   <span class="brand-title">COLOSIO OUTLET</span>
   <button class="btn-top-action btn-save-action" id="btnSaveProcess" title="Guardar proceso del plano y diseño en curso (Ctrl+S)">💾 Guardar</button>
@@ -875,6 +875,33 @@ controls.maxPolarAngle = Math.PI * 0.45;
 controls.autoRotate = false;
 controls.autoRotateSpeed = 1.6;
 
+// VUELO SUAVE E INTERPOLACIÓN DE CÁMARA
+let cameraAnim = null;
+
+function animateCameraTo(destCamPos, destTargetPos, duration = 450){
+  const startCamPos = camera.position.clone();
+  const startTarget = controls.target.clone();
+  let startTime = null;
+
+  cameraAnim = {
+    update: (now) => {
+      if(!startTime) startTime = now;
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      // Easing suave cúbico hacia el destino
+      const ease = 1 - Math.pow(1 - progress, 3);
+
+      camera.position.lerpVectors(startCamPos, destCamPos, ease);
+      controls.target.lerpVectors(startTarget, destTargetPos, ease);
+      controls.update();
+
+      if(progress >= 1){
+        cameraAnim = null;
+      }
+    }
+  };
+}
+
 canvas.addEventListener('wheel', () => {
   if(cameraAnim) cameraAnim = null;
 }, { passive: true });
@@ -898,7 +925,8 @@ canvas.addEventListener('dblclick', (e) => {
     const furn = furnHits[0].object.userData.parentFurniture;
     if(furn){
       selectFurniture(furn);
-      document.getElementById('btnResetView').click();
+      const btnReset = document.getElementById('btnResetView');
+      if(btnReset) btnReset.click();
       return;
     }
   }
@@ -943,36 +971,9 @@ const M = {
   floor: new THREE.MeshStandardMaterial({ color: 0x181a20, roughness:0.95, metalness:0.05 })
 };
 
-/* =====================================================================
-   3. CONSTRUCCIÓN DE NIVELES Y CONTROL DE MUROS (COLOSIO)
-   ===================================================================== */
-const levelGroups = {}, floorMeshes = {};
-const curY = { PB:0, N1:H_PB, OUTLET:0 };
-const targetY = { PB:0, N1:H_PB, OUTLET:0 };
-let activeWorkingLevel = 'PB';
-let currentFloorMode = 'exploded';
-
+// Almacén global de muros para control del Slider [🧱 Muros]
 const allWallMeshes = [];
 const allWallEdges = [];
-
-const textureLoader = new THREE.TextureLoader();
-let texPB = null, texN1 = null, texOutlet = null;
-
-texPB = textureLoader.load('PLANOS/plano_pb.png', (t) => {
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  if(floorMeshes['PB']) floorMeshes['PB'].material.map = t;
-});
-texN1 = textureLoader.load('PLANOS/plano_n1.png', (t) => {
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  if(floorMeshes['N1']) floorMeshes['N1'].material.map = t;
-});
-texOutlet = textureLoader.load('PLANOS/plano_outlet.png', (t) => {
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  if(floorMeshes['OUTLET']) floorMeshes['OUTLET'].material.map = t;
-});
 
 function regWall(mesh, grp, baseH = H_PB){
   mesh.castShadow = true;
@@ -995,6 +996,27 @@ function regWall(mesh, grp, baseH = H_PB){
 }
 
 const LEVEL_OBSTACLES = { PB:[], N1:[], OUTLET:[] };
+
+/* =====================================================================
+   3. CONSTRUCCIÓN DE NIVELES Y GEOMETRÍA A MEDIDA EXACTA COLOSIO
+   ===================================================================== */
+const levelGroups = {}, floorMeshes = {};
+const curY = { PB:0, N1:H_PB, OUTLET:0 };
+const targetY = { PB:0, N1:H_PB, OUTLET:0 };
+let activeWorkingLevel = 'PB';
+let currentFloorMode = 'exploded';
+
+// Carga de Texturas de Planos 2D Calibrados
+const textureLoader = new THREE.TextureLoader();
+const texPB = textureLoader.load('PLANOS/plano_pb.png', (t) => {
+  t.colorSpace = THREE.SRGBColorSpace;
+});
+const texN1 = textureLoader.load('PLANOS/plano_n1.png', (t) => {
+  t.colorSpace = THREE.SRGBColorSpace;
+});
+const texOutlet = textureLoader.load('PLANOS/plano_outlet.png', (t) => {
+  t.colorSpace = THREE.SRGBColorSpace;
+});
 
 function buildBuilding(){
   const L = STORE_LENGTH_X;
@@ -1019,10 +1041,10 @@ function buildBuilding(){
   // Malla técnica de proyección 2D
   const mFloorPB = new THREE.Mesh(
     new THREE.PlaneGeometry(L, W),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.92, depthWrite: false, map: texPB })
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, map: texPB })
   );
   mFloorPB.rotation.x = -Math.PI / 2;
-  mFloorPB.position.y = 0.008;
+  mFloorPB.position.y = 0.02;
   mFloorPB.userData.isFloor = true;
   mFloorPB.userData.level = 'PB';
   grpPB.add(mFloorPB);
@@ -1041,7 +1063,6 @@ function buildBuilding(){
   // 3. Muro Lateral Derecho / Este (X = +L/2) con Vano de Acceso de 5.79m
   const accesoW = 5.79;
   const segW = (W - accesoW) / 2;
-
   const wallRightTop = new THREE.Mesh(new THREE.BoxGeometry(t, H, segW), M.wallExt);
   wallRightTop.position.set(L / 2, H / 2, -W / 2 + segW / 2);
   regWall(wallRightTop, grpPB);
@@ -1055,43 +1076,40 @@ function buildBuilding(){
   regWall(dintel, grpPB, 0.70);
 
   // Puertas dobles de cristal de acceso
-  const doorMesh = new THREE.Mesh(new THREE.BoxGeometry(0.06, H - 0.70, accesoW - 0.2), M.glass);
+  const doorMesh = new THREE.Mesh(new THREE.BoxGeometry(0.06, H - 0.70, accesoW), M.glass);
   doorMesh.position.set(L / 2, (H - 0.70) / 2, 0);
   grpPB.add(doorMesh);
 
   // Escalinata exterior de acceso (10 escalones al Este)
   const extStairs = new THREE.Group();
-  for (let i = 0; i < 10; i++) {
-    const sMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(0.30, (10 - i) * 0.18, 4.80),
-      M.stair
-    );
-    sMesh.position.set(L / 2 + 0.15 + i * 0.30, ((10 - i) * 0.18) / 2, 0);
-    sMesh.receiveShadow = true;
+  for (let s = 0; s < 10; s++) {
+    const sMesh = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.18, accesoW + 0.8), M.stair);
+    sMesh.position.set(L / 2 + 0.15 + s * 0.30, -0.09 - s * 0.18, 0);
     extStairs.add(sMesh);
   }
   grpPB.add(extStairs);
 
   // 4. Fachada Frontal Arquitectónica (Muro Inclinado + Fachada Curva Vidriada)
-  // Segmento Inclinado Oeste (de X = -27.20, Z = +6.735 a X = -21.41, Z = +4.40)
-  const angWestLen = Math.hypot(5.79, 2.335);
+  const angWestLen = Math.hypot(5.79, 0.94);
   const angWestMesh = new THREE.Mesh(new THREE.BoxGeometry(angWestLen, H, t), M.wallExt);
-  angWestMesh.position.set((-27.20 - 21.41) / 2, H / 2, (6.735 + 4.40) / 2);
-  angWestMesh.rotation.y = Math.atan2(2.335, 5.79);
+  angWestMesh.position.set((-27.20 - 21.41) / 2, H / 2, (6.735 + 5.79) / 2);
+  angWestMesh.rotation.y = Math.atan2(0.94, 5.79);
   regWall(angWestMesh, grpPB);
 
   // Arco Curvo Central de Fachada (de X = -21.41 a X = +16.80)
   const numSegs = 16;
-  const xStart = -21.41, xEnd = 16.80;
-  let prevX = xStart, prevZ = 4.40;
+  const startX = -21.41, endX = 16.80;
+  let prevX = startX, prevZ = 5.79;
   for (let i = 1; i <= numSegs; i++) {
     const frac = i / numSegs;
-    const curX = xStart + frac * (xEnd - xStart);
-    const normX = (curX - (-2.3)) / 19.1;
-    const curZ = 1.70 + 2.70 * (normX * normX);
+    const curX = startX + (endX - startX) * frac;
+    const sagitta = 2.40 * Math.sin(frac * Math.PI);
+    const curZ = (5.79 * (1 - frac) + 3.60 * frac) + sagitta;
 
-    const segLen = Math.hypot(curX - prevX, curZ - prevZ);
-    const segAngle = Math.atan2(curZ - prevZ, curX - prevX);
+    const segDx = curX - prevX;
+    const segDz = curZ - prevZ;
+    const segLen = Math.hypot(segDx, segDz);
+    const segAngle = Math.atan2(segDz, segDx);
 
     const segWall = new THREE.Mesh(new THREE.BoxGeometry(segLen, H, 0.12), M.glass);
     segWall.position.set((prevX + curX) / 2, H / 2, (prevZ + curZ) / 2);
@@ -1263,7 +1281,7 @@ function buildBuilding(){
     grpOutlet.add(zMesh);
 
     const borderGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(z.w, 0.01, z.d));
-    const borderMat = new THREE.LineBasicMaterial({ color: z.col, transparent: true, opacity: 0.75, linewidth: 2 });
+    const borderMat = new THREE.LineBasicMaterial({ color: z.col, transparent: true, opacity: 0.75 });
     const border = new THREE.LineSegments(borderGeo, borderMat);
     border.position.set(z.x, 0.014, z.z);
     grpOutlet.add(border);
@@ -1290,10 +1308,12 @@ const btnToggleMuros = document.getElementById('btnToggleMuros');
 const murosRange = document.getElementById('murosRange');
 const murosValTxt = document.getElementById('murosValTxt');
 
-btnToggleMuros.addEventListener('click', () => {
-  const isOpen = murosWrap.classList.toggle('open');
-  btnToggleMuros.classList.toggle('active', isOpen);
-});
+if(btnToggleMuros && murosWrap){
+  btnToggleMuros.addEventListener('click', () => {
+    const isOpen = murosWrap.classList.toggle('open');
+    btnToggleMuros.classList.toggle('active', isOpen);
+  });
+}
 
 function setMurosHeight(val){
   const num = parseInt(val, 10);
@@ -1317,10 +1337,12 @@ function setMurosHeight(val){
   });
 }
 
-murosRange.addEventListener('input', (e) => {
-  setMurosHeight(e.target.value);
-  if(typeof saveStateToUrl === 'function') saveStateToUrl();
-});
+if(murosRange){
+  murosRange.addEventListener('input', (e) => {
+    setMurosHeight(e.target.value);
+    if(typeof saveStateToUrl === 'function') saveStateToUrl();
+  });
+}
 
 /* =====================================================================
    5. NAVEGACIÓN Y ANCLAJE DE PISOS (PB, N1, OUTLET O 3 NIVELES)
@@ -1374,6 +1396,52 @@ document.querySelectorAll('#topBarRight .pill-btn[data-mode]').forEach(btn => {
   btn.addEventListener('click', () => setFloorMode(btn.dataset.mode));
 });
 
+// Botón CENTRAR: vuelo suave e interpolado al producto seleccionado o a la vista general
+const btnResetViewEl = document.getElementById('btnResetView');
+if(btnResetViewEl){
+  btnResetViewEl.addEventListener('click', () => {
+    if(selectedFurniture && selectedFurniture.parent){
+      const wp = new THREE.Vector3();
+      selectedFurniture.getWorldPosition(wp);
+      const item = selectedFurniture.userData.item;
+      const dims = (item && item.dim_m) ? item.dim_m : [1, 1, 0.8];
+      const maxDim = Math.max(dims[0] || 1, dims[1] || 1, dims[2] || 0.8);
+      const viewDist = Math.max(2.0, Math.min(maxDim * 1.6 + 1.1, 4.8));
+      const destTarget = new THREE.Vector3(wp.x, wp.y + (dims[2] || 0.8) * 0.4, wp.z);
+      const destCam = new THREE.Vector3(
+        wp.x + viewDist * 0.72,
+        wp.y + viewDist * 0.55 + 0.2,
+        wp.z + viewDist * 0.72
+      );
+      animateCameraTo(destCam, destTarget, 450);
+    } else {
+      if(currentFloorMode === 'exploded'){
+        animateCameraTo(new THREE.Vector3(0, 42, 38), new THREE.Vector3(0, 3.5, 0), 500);
+      } else if(currentFloorMode === 'PB'){
+        animateCameraTo(new THREE.Vector3(0, 32, 28), new THREE.Vector3(0, 1.2, 0), 480);
+      } else if(currentFloorMode === 'N1'){
+        animateCameraTo(new THREE.Vector3(0, 32, 28), new THREE.Vector3(0, 1.2, 0), 480);
+      } else if(currentFloorMode === 'OUTLET'){
+        animateCameraTo(new THREE.Vector3(0, 34, 30), new THREE.Vector3(0, 1.2, 0), 480);
+      } else {
+        animateCameraTo(new THREE.Vector3(0, 42, 38), new THREE.Vector3(0, 3.5, 0), 500);
+      }
+    }
+  });
+}
+
+// Botón GIRAR VISTA (órbita 360 grados fluida)
+let autoRotateActive = false;
+const btnAutoRotate = document.getElementById('btnAutoRotate');
+if(btnAutoRotate){
+  btnAutoRotate.addEventListener('click', () => {
+    autoRotateActive = !autoRotateActive;
+    controls.autoRotate = autoRotateActive;
+    controls.autoRotateSpeed = 2.0;
+    btnAutoRotate.classList.toggle('active', autoRotateActive);
+  });
+}
+
 // Selector de tienda activa (Predeterminado Colosio)
 const STORE_CONFIG = {
   colosio: { name: 'Colosio', color: '#10b981', colorNum: 0x10b981, tint: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.35)' },
@@ -1381,7 +1449,6 @@ const STORE_CONFIG = {
   ptc: { name: 'PTC', color: '#f59e0b', colorNum: 0xf59e0b, tint: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.35)' },
   casa_creata: { name: 'Casa Creata', color: '#a855f7', colorNum: 0xa855f7, tint: 'rgba(168, 85, 247, 0.12)', border: 'rgba(168, 85, 247, 0.35)' }
 };
-
 /* =====================================================================
    6. CARGA Y CALIBRACIÓN DE MODELOS 3D (LUMINOSIDAD Y MATERIALES REALES)
    ===================================================================== */
@@ -1393,10 +1460,8 @@ let selectedFurniture = null;
 function loadGLB(glbName, cb){
   const encoded = encodeURIComponent(glbName);
   gltfLoader.load('glb/' + encoded, cb, undefined, (err) => {
-    gltfLoader.load('TIENDA/glb/' + encoded, cb, undefined, (err2) => {
-      gltfLoader.load('../PRODUCTOS/TIPO GLB/' + encoded, cb, undefined, (err3) => {
-        console.error('Error cargando modelo GLB:', glbName, err3);
-      });
+    gltfLoader.load('../PRODUCTOS/TIPO GLB/' + encoded, cb, undefined, (err2) => {
+      console.error('Error cargando modelo GLB:', glbName, err2);
     });
   });
 }
@@ -2877,7 +2942,7 @@ function renderCatalog(catFilter){
     card.innerHTML = `
       <div class="prod-card-img">
         ${varBadge}
-        <img src="${imgSrc}" alt="${item.name}" ${flipCls} loading="lazy" onerror="if(!this.dataset.retried){this.dataset.retried=1;this.src='TIENDA/'+this.getAttribute('src');}">
+        <img src="${imgSrc}" alt="${item.name}" ${flipCls} loading="lazy">
       </div>
       <div class="prod-card-info" style="background: ${salesTier.tint}; border-top: 2px solid ${salesTier.border};">
         <div class="prod-store-badge" style="background: ${salesTier.badgeBg}; color: ${salesTier.badgeText}; border: 1px solid ${salesTier.border};">Ventas ${storeCfg.name.toUpperCase()}: <b>${storeSales}</b></div>
