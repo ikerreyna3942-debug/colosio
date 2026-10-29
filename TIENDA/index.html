@@ -600,12 +600,12 @@
 
 <!-- 2. Cápsula Superior Derecha (Niveles, Muros y Herramientas CAD) -->
 <div id="topBarRight">
-  <button class="pill-btn active" data-mode="exploded">🏢 3 Niveles</button>
-  <button class="pill-btn" id="btnToggleMuros">🧱 Muros</button>
-  <span class="pill-sep"></span>
-  <button class="pill-btn" data-mode="PB">📍 Planta Baja</button>
+    <button class="pill-btn active" data-mode="PB">📍 Planta Baja</button>
   <button class="pill-btn" data-mode="N1">📍 Primer Nivel</button>
   <button class="pill-btn" data-mode="OUTLET">📍 Nave Outlet</button>
+  <span class="pill-sep"></span>
+  <button class="pill-btn" data-mode="exploded">🏢 3 Niveles</button>
+  <button class="pill-btn" id="btnToggleMuros">🧱 Muros</button>
   <span class="pill-sep"></span>
   <button class="pill-btn" id="btnSelectStore" title="Elegir tienda para ver ventas">🏪 Tienda: <b id="lblActiveStore">COLOSIO</b> ▾</button>
   <button class="pill-btn" id="btnAutoRot">🔄 Girar Vista</button>
@@ -1006,17 +1006,19 @@ const targetY = { PB:0, N1:H_PB, OUTLET:0 };
 let activeWorkingLevel = 'PB';
 let currentFloorMode = 'exploded';
 
-// Carga de Texturas de Planos 2D Calibrados
+// Carga de Texturas de Planos 2D Calibrados con Máxima Nitidez
 const textureLoader = new THREE.TextureLoader();
-const texPB = textureLoader.load('PLANOS/plano_pb.png', (t) => {
+function setupFloorTex(url){
+  const t = textureLoader.load(url);
   t.colorSpace = THREE.SRGBColorSpace;
-});
-const texN1 = textureLoader.load('PLANOS/plano_n1.png', (t) => {
-  t.colorSpace = THREE.SRGBColorSpace;
-});
-const texOutlet = textureLoader.load('PLANOS/plano_outlet.png', (t) => {
-  t.colorSpace = THREE.SRGBColorSpace;
-});
+  t.minFilter = THREE.LinearFilter;
+  t.magFilter = THREE.LinearFilter;
+  t.generateMipmaps = false;
+  return t;
+}
+const texPB = setupFloorTex('PLANOS/plano_pb.png');
+const texN1 = setupFloorTex('PLANOS/plano_n1.png');
+const texOutlet = setupFloorTex('PLANOS/plano_outlet.png');
 
 function buildBuilding(){
   const L = STORE_LENGTH_X;
@@ -1041,7 +1043,7 @@ function buildBuilding(){
   // Malla técnica de proyección 2D
   const mFloorPB = new THREE.Mesh(
     new THREE.PlaneGeometry(L, W),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, map: texPB })
+    new THREE.MeshBasicMaterial({ color: 0xffffff, map: texPB, depthWrite: true })
   );
   mFloorPB.rotation.x = -Math.PI / 2;
   mFloorPB.position.y = 0.02;
@@ -1196,10 +1198,10 @@ function buildBuilding(){
 
   const mFloorN1 = new THREE.Mesh(
     new THREE.PlaneGeometry(L, W),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.92, depthWrite: false, map: texN1 })
+    new THREE.MeshBasicMaterial({ color: 0xffffff, map: texN1, depthWrite: true })
   );
   mFloorN1.rotation.x = -Math.PI / 2;
-  mFloorN1.position.y = 0.012;
+  mFloorN1.position.y = 0.02;
   mFloorN1.userData.isFloor = true;
   mFloorN1.userData.level = 'N1';
   grpN1.add(mFloorN1);
@@ -1242,10 +1244,10 @@ function buildBuilding(){
 
   const mFloorOutlet = new THREE.Mesh(
     new THREE.PlaneGeometry(L, W),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.92, depthWrite: false, map: texOutlet })
+    new THREE.MeshBasicMaterial({ color: 0xffffff, map: texOutlet, depthWrite: true })
   );
   mFloorOutlet.rotation.x = -Math.PI / 2;
-  mFloorOutlet.position.y = 0.009;
+  mFloorOutlet.position.y = 0.02;
   mFloorOutlet.userData.isFloor = true;
   mFloorOutlet.userData.level = 'OUTLET';
   grpOutlet.add(mFloorOutlet);
@@ -1287,15 +1289,14 @@ function buildBuilding(){
     grpOutlet.add(border);
   });
 
-  // Obstáculos perimetrales para colisión y docking inteligente
-  const margin = 0.35;
+  // Obstáculos internos (el perímetro está delimitado con precisión por PERIMETER_BOUNDS)
   LEVEL_OBSTACLES['PB'] = [
-    { minX: -L/2, maxX: L/2, minZ: -W/2 - 2, maxZ: -W/2 + margin },
-    { minX: -L/2 - 2, maxX: -L/2 + margin, minZ: -W/2, maxZ: W/2 },
-    { minX: L/2 - margin, maxX: L/2 + 2, minZ: -W/2, maxZ: W/2 }
+    { minX: -26.0, maxX: -22.0, minZ: 1.5, maxZ: 4.8 }
   ];
-  LEVEL_OBSTACLES['N1'] = [...LEVEL_OBSTACLES['PB']];
-  LEVEL_OBSTACLES['OUTLET'] = [...LEVEL_OBSTACLES['PB']];
+  LEVEL_OBSTACLES['N1'] = [
+    { minX: -26.0, maxX: -22.0, minZ: 1.5, maxZ: 4.8 }
+  ];
+  LEVEL_OBSTACLES['OUTLET'] = [];
 }
 
 buildBuilding();
@@ -1449,6 +1450,115 @@ const STORE_CONFIG = {
   ptc: { name: 'PTC', color: '#f59e0b', colorNum: 0xf59e0b, tint: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.35)' },
   casa_creata: { name: 'Casa Creata', color: '#a855f7', colorNum: 0xa855f7, tint: 'rgba(168, 85, 247, 0.12)', border: 'rgba(168, 85, 247, 0.35)' }
 };
+
+let currentStore = 'colosio';
+let liveSheetsDb = window.FULL_SHEETS_DB || {};
+
+function getLiveProductData(item){
+  if(!item) return null;
+  const db = liveSheetsDb || window.FULL_SHEETS_DB || {};
+  const sku = (item.sku || '').trim();
+  const skuNorm = sku.toUpperCase().replace(/\s+/g, '');
+  const nom = (item.name || '').trim();
+  const nomNorm = nom.toUpperCase();
+  const id = (item.id || '').trim();
+
+  let found = db[sku] ||
+              (skuNorm && db[skuNorm]) ||
+              db[nom] ||
+              (nomNorm && db[nomNorm]) ||
+              db[id];
+
+  if(!found && (sku || nom)){
+    const sLow = sku.toLowerCase();
+    const nLow = nom.toLowerCase();
+    for(const k in db){
+      const kLow = k.toLowerCase();
+      if((sLow && (kLow.includes(sLow) || sLow.includes(kLow))) ||
+         (nLow && (kLow.includes(nLow) || nLow.includes(kLow)))){
+        found = db[k];
+        break;
+      }
+    }
+  }
+  return found || item;
+}
+
+function refreshAllSalesVisuals(){
+  placedFurniture.forEach(f => {
+    const item = f.userData.item;
+    if(!item) return;
+    const liveData = getLiveProductData(item);
+    const salesCount = (liveData.ventas && liveData.ventas[currentStore] !== undefined)
+      ? liveData.ventas[currentStore]
+      : ((item.ventas && item.ventas[currentStore]) || 0);
+    const tier = getSalesColorData(salesCount);
+
+    f.traverse(c => {
+      if(c.userData && c.userData.isContour){
+        if(c.material) c.material.color.setHex(tier.hexNum);
+      }
+    });
+  });
+
+  if(typeof renderCatalog === 'function' && typeof catalogGrid !== 'undefined' && catalogGrid){
+    const activeChip = document.querySelector('.cat-chips-bar .cat-chip.active');
+    renderCatalog(activeChip ? activeChip.dataset.cat : 'all');
+  }
+  if(selectedFurniture && typeof renderFichaTables === 'function'){
+    renderFichaTables(selectedFurniture.userData.item);
+    renderSelectionHighlight();
+  }
+}
+
+function setStore(storeKey){
+  if(!STORE_CONFIG[storeKey]) return;
+  currentStore = storeKey;
+  const cfg = STORE_CONFIG[storeKey];
+  const lbl = document.getElementById('lblActiveStore');
+  if(lbl) lbl.textContent = cfg.name.toUpperCase();
+  document.documentElement.style.setProperty('--store-color', cfg.color);
+  document.documentElement.style.setProperty('--store-tint', cfg.tint);
+  document.documentElement.style.setProperty('--store-border', cfg.border);
+
+  document.querySelectorAll('.store-menu-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.store === storeKey);
+  });
+
+  refreshAllSalesVisuals();
+  if(typeof saveStateToUrl === 'function') saveStateToUrl();
+}
+
+const btnStore = document.getElementById('btnSelectStore');
+const storeMenu = document.getElementById('storeDropdownMenu');
+if(btnStore && storeMenu){
+  btnStore.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = storeMenu.classList.contains('open');
+    if(isOpen){
+      storeMenu.classList.remove('open');
+    } else {
+      const rect = btnStore.getBoundingClientRect();
+      storeMenu.style.top = (rect.bottom + 8) + 'px';
+      let leftPos = rect.left;
+      if(leftPos + 220 > window.innerWidth - 12){
+        leftPos = window.innerWidth - 232;
+      }
+      storeMenu.style.left = Math.max(12, leftPos) + 'px';
+      storeMenu.classList.add('open');
+    }
+  });
+  document.addEventListener('click', () => {
+    storeMenu.classList.remove('open');
+  });
+  document.querySelectorAll('.store-menu-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setStore(item.dataset.store);
+      storeMenu.classList.remove('open');
+    });
+  });
+}
 /* =====================================================================
    6. CARGA Y CALIBRACIÓN DE MODELOS 3D (LUMINOSIDAD Y MATERIALES REALES)
    ===================================================================== */
@@ -1724,10 +1834,10 @@ function createFurnitureInstance(item, callback){
    7. SISTEMA DE COLISIONES REAL: PAREDES, PISO, BASES DE CAMA Y MUEBLES
    ===================================================================== */
 const PERIMETER_BOUNDS = {
-  minX: 0.25,
-  maxX: 19.96,
-  minZ: -23.77,
-  maxZ: -0.25
+  minX: -STORE_LENGTH_X / 2 + 0.15,
+  maxX:  STORE_LENGTH_X / 2 - 0.15,
+  minZ: -STORE_WIDTH_Z / 2 + 0.15,
+  maxZ:  STORE_WIDTH_Z / 2 - 0.15
 };
 
 function isCabeceraItem(it){
@@ -3599,7 +3709,7 @@ if(btnRecEl){
   btnRecEl.addEventListener('click', toggleCanvasRecording);
 }
 
-setFloorMode('exploded');
+setFloorMode('PB');
 restoreInitialState();
 
 // Sincronización en vivo automática de Google Sheets (Ficha técnica y ventas)
