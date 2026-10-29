@@ -1008,7 +1008,7 @@
   </div>
 </div>
 
-<script src="modelos_glb_data.js?v=1793137651"></script>
+<script src="modelos_glb_data.js?v=1793293430"></script>
 <script type="importmap">
 { "imports": {
   "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
@@ -1229,27 +1229,168 @@ const texPB = setupFloorTex('PLANOS/plano_pb.png', () => mFloorPB);
 const texN1 = setupFloorTex('PLANOS/plano_n1.png', () => mFloorN1);
 const texOutlet = setupFloorTex('PLANOS/plano_outlet.png', () => mFloorOutlet);
 
+// Helper para construir muros y ventanales por segmentos de polilínea
+function addPolylineWall(pts, mat, parentGroup, H, thickness, isGlass){
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const dx = p2[0] - p1[0];
+    const dz = p2[1] - p1[1];
+    const len = Math.hypot(dx, dz);
+    const angle = Math.atan2(dz, dx);
+    const mx = (p1[0] + p2[0]) / 2;
+    const mz = (p1[1] + p2[1]) / 2;
+
+    const wallMesh = new THREE.Mesh(new THREE.BoxGeometry(len, H, thickness), mat);
+    wallMesh.position.set(mx, H / 2, mz);
+    wallMesh.rotation.y = -angle;
+    wallMesh.castShadow = !isGlass;
+    wallMesh.receiveShadow = true;
+    regWall(wallMesh, parentGroup, H);
+
+    // Si es cristal, colocar parteluces de cancelería (mullions) de aluminio
+    if (isGlass) {
+      const m1 = new THREE.Mesh(new THREE.BoxGeometry(0.12, H, 0.12), M.wallInt);
+      m1.position.set(p1[0], H / 2, p1[1]);
+      regWall(m1, parentGroup, H);
+      const m2 = new THREE.Mesh(new THREE.BoxGeometry(0.12, H, 0.12), M.wallInt);
+      m2.position.set(p2[0], H / 2, p2[1]);
+      regWall(m2, parentGroup, H);
+    }
+  }
+}
+
+// Fachada arquitectónica oficial Colosio: Muros sólidos alternados con ventanales de cristal
+function buildFacadeSegments(parentGroup, H){
+  const t = 0.25;
+
+  // 1. Muro Sólido Oeste (Ejes Y1 a Y3, Longitud ~12.0m)
+  // Aquí se ubica en tienda real el área de recámara con cabecera y cuadros (Foto real 1)
+  const ptsWest = [
+    [-27.20, 6.735],
+    [-21.80, 3.78],
+    [-15.18, 2.40]
+  ];
+  addPolylineWall(ptsWest, M.wallExt, parentGroup, H, t, false);
+
+  // 2. Ventanal 1 de Cristal de Piso a Techo (Ejes Y3 a Y4, Longitud ~8.8m)
+  // Cristal templado con cancelería que baña de luz natural el interior (Foto real 1)
+  const ptsGlass1 = [
+    [-15.18, 2.40],
+    [-10.99, 1.62],
+    [-6.40, 0.50]
+  ];
+  addPolylineWall(ptsGlass1, M.glass, parentGroup, H, 0.10, true);
+
+  // 3. Muro Sólido Central en Vértice de Fachada (Ejes Y4 a Y7, Longitud ~7.4m)
+  // Muro sólido donde se exhiben sofás principales, espejos y consolas (Foto real 2)
+  const ptsCenter = [
+    [-6.40, 0.50],
+    [-1.94, 0.38],
+    [0.96, 0.50]
+  ];
+  addPolylineWall(ptsCenter, M.wallExt, parentGroup, H, t, false);
+
+  // 4. Ventanal 2 de Cristal de Piso a Techo (Ejes Y7 a Y9, Longitud ~8.8m)
+  // Segundo ventanal curvo con cancelería
+  const ptsGlass2 = [
+    [0.96, 0.50],
+    [5.29, 0.71],
+    [9.80, 1.40]
+  ];
+  addPolylineWall(ptsGlass2, M.glass, parentGroup, H, 0.10, true);
+
+  // 5. Muro Sólido Diagonal Este (Ejes Y9 a Y12, Longitud ~13.1m)
+  // Muro continuo hacia la zona de acceso
+  const ptsEast = [
+    [9.80, 1.40],
+    [16.18, 2.16],
+    [21.89, 5.48],
+    [22.91, 6.64]
+  ];
+  addPolylineWall(ptsEast, M.wallExt, parentGroup, H, t, false);
+
+  // 6. Fachada Vidriada de Acceso (Ejes Y12 a Y14, Ancho 4.29m)
+  const ptsAcceso = [
+    [22.91, 6.64],
+    [27.20, 6.735]
+  ];
+  addPolylineWall(ptsAcceso, M.glass, parentGroup, H, 0.10, true);
+}
+
+// Construcción de la Escalera Oficial Colosio (18 escalones reales, Eje Y1)
+function buildOfficialStaircase(H_stair){
+  const stairGroup = new THREE.Group();
+  const numSteps = 18;
+  const stepRise = H_stair / numSteps;
+  const treadDepth = 0.28;
+  const treadWidth = 1.30;
+
+  // Tramo 1: Escalones 1 a 13 subiendo en dirección -Z hacia descanso
+  const startX = -25.20;
+  const startZ = 4.10;
+  for (let s = 0; s < 13; s++) {
+    const stMesh = new THREE.Mesh(new THREE.BoxGeometry(treadWidth, stepRise, treadDepth), M.stair);
+    stMesh.position.set(startX, s * stepRise + stepRise / 2, startZ - s * treadDepth);
+    stMesh.castShadow = true;
+    stMesh.receiveShadow = true;
+    stairGroup.add(stMesh);
+  }
+
+  // Descanso intermedio
+  const landingY = 13 * stepRise;
+  const landingZ = startZ - 13 * treadDepth;
+  const landing = new THREE.Mesh(new THREE.BoxGeometry(1.60, stepRise, 1.60), M.stair);
+  landing.position.set(startX + 0.15, landingY - stepRise / 2, landingZ - 0.15);
+  landing.castShadow = true;
+  landing.receiveShadow = true;
+  stairGroup.add(landing);
+
+  // Tramo 2: Escalones 14 a 18 girando 90° a la derecha hacia el Este (+X)
+  for (let s = 0; s < 5; s++) {
+    const stMesh = new THREE.Mesh(new THREE.BoxGeometry(treadDepth, stepRise, treadWidth), M.stair);
+    stMesh.position.set(
+      startX + 0.95 + s * treadDepth,
+      (13 + s) * stepRise + stepRise / 2,
+      landingZ - 0.15
+    );
+    stMesh.castShadow = true;
+    stMesh.receiveShadow = true;
+    stairGroup.add(stMesh);
+  }
+
+  // Pasamanos / Barandal de la escalera
+  const railGeo = new THREE.CylinderGeometry(0.025, 0.025, 3.8);
+  const railMesh = new THREE.Mesh(railGeo, M.beam);
+  railMesh.rotation.x = Math.atan2(13 * stepRise, 13 * treadDepth);
+  railMesh.position.set(startX - treadWidth / 2 + 0.05, (13 * stepRise) / 2 + 0.85, startZ - (13 * treadDepth) / 2);
+  stairGroup.add(railMesh);
+
+  return stairGroup;
+}
+
 function buildBuilding(){
   const L = STORE_LENGTH_X;
   const W = STORE_WIDTH_Z;
-  const H = H_PB;
+  const H_PB_ACTUAL = H_PB;
+  const H_N1_ACTUAL = 3.63; // Altura libre Nivel 1 hasta plafón/cubierta (5.83 - 2.20)
   const t = 0.25;
 
-  // -------------------------------------------------------------
+  // =============================================================
   // PLANTA BAJA (PB)
-  // -------------------------------------------------------------
+  // =============================================================
   const grpPB = new THREE.Group();
   grpPB.position.y = 0;
   scene.add(grpPB);
   levelGroups['PB'] = grpPB;
 
-  // Losa base
+  // Losa base PB
   const floorMeshPB = new THREE.Mesh(new THREE.PlaneGeometry(L, W), M.floor);
   floorMeshPB.rotation.x = -Math.PI / 2;
   floorMeshPB.receiveShadow = true;
   grpPB.add(floorMeshPB);
 
-  // Malla técnica de proyección 2D
+  // Malla técnica de proyección 2D PB
   mFloorPB = new THREE.Mesh(
     new THREE.PlaneGeometry(L, W),
     new THREE.MeshBasicMaterial({ color: 0xffffff, map: texPB, depthWrite: true })
@@ -1262,36 +1403,36 @@ function buildBuilding(){
   floorMeshes['PB'] = mFloorPB;
 
   // 1. Muro Posterior Recto (Z = -W/2, Longitud 54.40m)
-  const wallBack = new THREE.Mesh(new THREE.BoxGeometry(L, H, t), M.wallExt);
-  wallBack.position.set(0, H / 2, -W / 2);
-  regWall(wallBack, grpPB);
+  const wallBackPB = new THREE.Mesh(new THREE.BoxGeometry(L, H_PB_ACTUAL, t), M.wallExt);
+  wallBackPB.position.set(0, H_PB_ACTUAL / 2, -W / 2);
+  regWall(wallBackPB, grpPB, H_PB_ACTUAL);
 
   // 2. Muro Lateral Izquierdo / Oeste (X = -L/2, Ancho 13.47m)
-  const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(t, H, W), M.wallExt);
-  wallLeft.position.set(-L / 2, H / 2, 0);
-  regWall(wallLeft, grpPB);
+  const wallLeftPB = new THREE.Mesh(new THREE.BoxGeometry(t, H_PB_ACTUAL, W), M.wallExt);
+  wallLeftPB.position.set(-L / 2, H_PB_ACTUAL / 2, 0);
+  regWall(wallLeftPB, grpPB, H_PB_ACTUAL);
 
   // 3. Muro Lateral Derecho / Este (X = +L/2) con Vano de Acceso de 5.79m
   const accesoW = 5.79;
   const segW = (W - accesoW) / 2;
-  const wallRightTop = new THREE.Mesh(new THREE.BoxGeometry(t, H, segW), M.wallExt);
-  wallRightTop.position.set(L / 2, H / 2, -W / 2 + segW / 2);
-  regWall(wallRightTop, grpPB);
+  const wallRightTopPB = new THREE.Mesh(new THREE.BoxGeometry(t, H_PB_ACTUAL, segW), M.wallExt);
+  wallRightTopPB.position.set(L / 2, H_PB_ACTUAL / 2, -W / 2 + segW / 2);
+  regWall(wallRightTopPB, grpPB, H_PB_ACTUAL);
 
-  const wallRightBottom = new THREE.Mesh(new THREE.BoxGeometry(t, H, segW), M.wallExt);
-  wallRightBottom.position.set(L / 2, H / 2, W / 2 - segW / 2);
-  regWall(wallRightBottom, grpPB);
+  const wallRightBottomPB = new THREE.Mesh(new THREE.BoxGeometry(t, H_PB_ACTUAL, segW), M.wallExt);
+  wallRightBottomPB.position.set(L / 2, H_PB_ACTUAL / 2, W / 2 - segW / 2);
+  regWall(wallRightBottomPB, grpPB, H_PB_ACTUAL);
 
-  const dintel = new THREE.Mesh(new THREE.BoxGeometry(t, 0.70, accesoW), M.wallExt);
-  dintel.position.set(L / 2, H - 0.35, 0);
-  regWall(dintel, grpPB, 0.70);
+  const dintelPB = new THREE.Mesh(new THREE.BoxGeometry(t, 0.70, accesoW), M.wallExt);
+  dintelPB.position.set(L / 2, H_PB_ACTUAL - 0.35, 0);
+  regWall(dintelPB, grpPB, 0.70);
 
   // Puertas dobles de cristal de acceso
-  const doorMesh = new THREE.Mesh(new THREE.BoxGeometry(0.06, H - 0.70, accesoW), M.glass);
-  doorMesh.position.set(L / 2, (H - 0.70) / 2, 0);
-  grpPB.add(doorMesh);
+  const doorMeshPB = new THREE.Mesh(new THREE.BoxGeometry(0.06, H_PB_ACTUAL - 0.70, accesoW), M.glass);
+  doorMeshPB.position.set(L / 2, (H_PB_ACTUAL - 0.70) / 2, 0);
+  grpPB.add(doorMeshPB);
 
-  // Escalinata exterior de acceso (10 escalones al Este)
+  // Escalinata exterior de acceso (10 escalones al Este según cota CAD)
   const extStairs = new THREE.Group();
   for (let s = 0; s < 10; s++) {
     const sMesh = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.18, accesoW + 0.8), M.stair);
@@ -1300,111 +1441,54 @@ function buildBuilding(){
   }
   grpPB.add(extStairs);
 
-  // 4. Fachada Frontal Arquitectónica (Muro Inclinado + Fachada Curva Vidriada)
-  const angWestLen = Math.hypot(5.79, 0.94);
-  const angWestMesh = new THREE.Mesh(new THREE.BoxGeometry(angWestLen, H, t), M.wallExt);
-  angWestMesh.position.set((-27.20 - 21.41) / 2, H / 2, (6.735 + 5.79) / 2);
-  angWestMesh.rotation.y = Math.atan2(0.94, 5.79);
-  regWall(angWestMesh, grpPB);
+  // 4. Fachada Frontal Arquitectónica PB (Muros Sólidos + Ventanales de Cristal)
+  buildFacadeSegments(grpPB, H_PB_ACTUAL);
 
-  // Arco Curvo Central de Fachada (de X = -21.41 a X = +16.80)
-  const numSegs = 16;
-  const startX = -21.41, endX = 16.80;
-  let prevX = startX, prevZ = 5.79;
-  for (let i = 1; i <= numSegs; i++) {
-    const frac = i / numSegs;
-    const curX = startX + (endX - startX) * frac;
-    const sagitta = 2.40 * Math.sin(frac * Math.PI);
-    const curZ = (5.79 * (1 - frac) + 3.60 * frac) + sagitta;
+  // 5. Escalera Oficial Colosio (18 escalones reales, subiendo de 0.00 a +2.20)
+  const stairsPB = buildOfficialStaircase(2.20);
+  grpPB.add(stairsPB);
 
-    const segDx = curX - prevX;
-    const segDz = curZ - prevZ;
-    const segLen = Math.hypot(segDx, segDz);
-    const segAngle = Math.atan2(segDz, segDx);
+  // 6. Módulo de Oficina / Mostrador PB (Top Right)
+  const offPB_H = new THREE.Mesh(new THREE.BoxGeometry(5.0, H_PB_ACTUAL, 0.12), M.wallInt);
+  offPB_H.position.set(24.5, H_PB_ACTUAL / 2, -3.8);
+  regWall(offPB_H, grpPB, H_PB_ACTUAL);
 
-    const segWall = new THREE.Mesh(new THREE.BoxGeometry(segLen, H, 0.12), M.glass);
-    segWall.position.set((prevX + curX) / 2, H / 2, (prevZ + curZ) / 2);
-    segWall.rotation.y = -segAngle;
-    regWall(segWall, grpPB);
-
-    const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.18, H, 0.18), M.wallInt);
-    mullion.position.set(curX, H / 2, curZ);
-    regWall(mullion, grpPB);
-
-    prevX = curX; prevZ = curZ;
-  }
-
-  // Segmento Inclinado Este (de X = +16.80, Z = +3.60 a X = +22.80, Z = +6.735)
-  const angEastLen = Math.hypot(6.00, 3.135);
-  const angEastMesh = new THREE.Mesh(new THREE.BoxGeometry(angEastLen, H, t), M.wallExt);
-  angEastMesh.position.set((16.80 + 22.80) / 2, H / 2, (3.60 + 6.735) / 2);
-  angEastMesh.rotation.y = -Math.atan2(3.135, 6.00);
-  regWall(angEastMesh, grpPB);
-
-  // Retorno a Fachada Este (de X = +22.80 a X = +27.20, Z = +6.735)
-  const retMesh = new THREE.Mesh(new THREE.BoxGeometry(27.20 - 22.80, H, t), M.wallExt);
-  retMesh.position.set((22.80 + 27.20) / 2, H / 2, 6.735);
-  regWall(retMesh, grpPB);
-
-  // 5. Cubo de Escalera Oficial (18 escalones reales en Oeste, Eje Y1)
-  const stairGroup = new THREE.Group();
-  const stepH = H / 18;
-  for (let s = 0; s < 13; s++) {
-    const st = new THREE.Mesh(new THREE.BoxGeometry(0.28, stepH, 1.40), M.stair);
-    st.position.set(s * 0.28, s * stepH + stepH / 2, 0);
-    st.receiveShadow = true;
-    stairGroup.add(st);
-  }
-  const landing = new THREE.Mesh(new THREE.BoxGeometry(1.40, stepH, 2.24), M.stair);
-  landing.position.set(13 * 0.28 + 0.70, 13 * stepH - stepH / 2, -0.42);
-  stairGroup.add(landing);
-  for (let s = 0; s < 5; s++) {
-    const st = new THREE.Mesh(new THREE.BoxGeometry(1.40, stepH, 0.28), M.stair);
-    st.position.set(13 * 0.28 + 0.70, (13 + s) * stepH + stepH / 2, -1.12 - s * 0.28);
-    stairGroup.add(st);
-  }
-  stairGroup.position.set(-25.5, 0, 3.2);
-  grpPB.add(stairGroup);
-
-  // 6. Módulo de Oficinas Administrativas / Privado (Top Right)
-  const offWallH = new THREE.Mesh(new THREE.BoxGeometry(5.0, H, 0.12), M.wallInt);
-  offWallH.position.set(23.5, H / 2, -4.8 + 1.8);
-  regWall(offWallH, grpPB);
-
-  const offWallV = new THREE.Mesh(new THREE.BoxGeometry(0.12, H, 3.6), M.wallInt);
-  offWallV.position.set(21.0, H / 2, -4.8);
-  regWall(offWallV, grpPB);
+  const offPB_V = new THREE.Mesh(new THREE.BoxGeometry(0.12, H_PB_ACTUAL, 3.0), M.wallInt);
+  offPB_V.position.set(22.0, H_PB_ACTUAL / 2, -5.2);
+  regWall(offPB_V, grpPB, H_PB_ACTUAL);
 
   // 7. Columnas estructurales de carga en las 11 crujías oficiales
   const cotas = [5.31, 5.30, 5.29, 5.30, 5.30, 5.30, 5.30, 5.29, 5.71, 5.00, 1.20];
-  const colGeo = new THREE.BoxGeometry(0.40, H, 0.40);
+  const colGeoPB = new THREE.BoxGeometry(0.40, H_PB_ACTUAL, 0.40);
   let curColX = -L / 2;
   for (let i = 0; i < cotas.length; i++) {
     curColX += cotas[i];
     if (curColX < L / 2 - 0.5) {
-      const c1 = new THREE.Mesh(colGeo, M.col);
-      c1.position.set(curColX, H / 2, -W / 2 + 0.25);
+      const c1 = new THREE.Mesh(colGeoPB, M.col);
+      c1.position.set(curColX, H_PB_ACTUAL / 2, -W / 2 + 0.25);
       grpPB.add(c1);
 
-      const c2 = new THREE.Mesh(colGeo, M.col);
-      c2.position.set(curColX, H / 2, -0.5);
+      const c2 = new THREE.Mesh(colGeoPB, M.col);
+      c2.position.set(curColX, H_PB_ACTUAL / 2, -0.5);
       grpPB.add(c2);
     }
   }
 
-  // -------------------------------------------------------------
-  // PRIMER NIVEL (N1)
-  // -------------------------------------------------------------
+  // =============================================================
+  // PRIMER NIVEL (N1) - ARQUITECTURA COMPLETA
+  // =============================================================
   const grpN1 = new THREE.Group();
-  grpN1.position.y = H_PB;
+  grpN1.position.y = 2.20; // Elevación oficial N.PT +2.20
   scene.add(grpN1);
   levelGroups['N1'] = grpN1;
 
+  // Losa base N1
   const floorMeshN1 = new THREE.Mesh(new THREE.PlaneGeometry(L, W), M.floor);
   floorMeshN1.rotation.x = -Math.PI / 2;
   floorMeshN1.receiveShadow = true;
   grpN1.add(floorMeshN1);
 
+  // Malla técnica de proyección 2D N1
   mFloorN1 = new THREE.Mesh(
     new THREE.PlaneGeometry(L, W),
     new THREE.MeshBasicMaterial({ color: 0xffffff, map: texN1, depthWrite: true })
@@ -1416,31 +1500,105 @@ function buildBuilding(){
   grpN1.add(mFloorN1);
   floorMeshes['N1'] = mFloorN1;
 
-  // Barandales de seguridad vano de escalera
-  const rail1 = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.95, 0.06), M.glass);
-  rail1.position.set(-24.5 + 1.75, 0.48, 3.2 - 0.7);
-  grpN1.add(rail1);
-  const rail2 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.95, 1.6), M.glass);
-  rail2.position.set(-24.5 + 3.5, 0.48, 3.2);
-  grpN1.add(rail2);
+  // 1. Muro Posterior Recto N1 (Z = -W/2, Longitud 54.40m)
+  const wallBackN1 = new THREE.Mesh(new THREE.BoxGeometry(L, H_N1_ACTUAL, t), M.wallExt);
+  wallBackN1.position.set(0, H_N1_ACTUAL / 2, -W / 2);
+  regWall(wallBackN1, grpN1, H_N1_ACTUAL);
 
-  // Muros perimetrales superiores
-  const hSup = H_ROOF - H_PB;
-  const supBack = new THREE.Mesh(new THREE.BoxGeometry(L, hSup, t), M.wallExt);
-  supBack.position.set(0, hSup / 2, -W / 2);
-  regWall(supBack, grpN1, hSup);
+  // 2. Muro Lateral Izquierdo / Oeste N1 (X = -L/2)
+  const wallLeftN1 = new THREE.Mesh(new THREE.BoxGeometry(t, H_N1_ACTUAL, W), M.wallExt);
+  wallLeftN1.position.set(-L / 2, H_N1_ACTUAL / 2, 0);
+  regWall(wallLeftN1, grpN1, H_N1_ACTUAL);
 
-  const supLeft = new THREE.Mesh(new THREE.BoxGeometry(t, hSup, W), M.wallExt);
-  supLeft.position.set(-L / 2, hSup / 2, 0);
-  regWall(supLeft, grpN1, hSup);
+  // 3. Muro Lateral Derecho / Este N1 (X = +L/2)
+  const wallRightN1 = new THREE.Mesh(new THREE.BoxGeometry(t, H_N1_ACTUAL, W), M.wallExt);
+  wallRightN1.position.set(L / 2, H_N1_ACTUAL / 2, 0);
+  regWall(wallRightN1, grpN1, H_N1_ACTUAL);
 
-  const supRight = new THREE.Mesh(new THREE.BoxGeometry(t, hSup, W), M.wallExt);
-  supRight.position.set(L / 2, hSup / 2, 0);
-  regWall(supRight, grpN1, hSup);
+  // 4. Fachada Frontal Arquitectónica N1 (Muros Sólidos + Ventanales de Cristal)
+  buildFacadeSegments(grpN1, H_N1_ACTUAL);
 
-  // -------------------------------------------------------------
+  // 5. Llegada de Escalera y Barandales de Seguridad en N1
+  // Réplica de la escalera visible en N1 para cuando se visualiza individualmente
+  const stairsN1 = buildOfficialStaircase(2.20);
+  stairsN1.position.y = -2.20; // Alineada con el hueco de la escalera
+  grpN1.add(stairsN1);
+
+  // Barandal perimetral de cristal templado alrededor del cubo de escalera en N1
+  const stairRailZ = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.95, 3.80), M.glass);
+  stairRailZ.position.set(-21.80, 0.48, 2.20);
+  grpN1.add(stairRailZ);
+
+  const stairRailX = new THREE.Mesh(new THREE.BoxGeometry(3.60, 0.95, 0.06), M.glass);
+  stairRailX.position.set(-23.60, 0.48, 0.30);
+  grpN1.add(stairRailX);
+
+  // Postes de acero inoxidable para barandal de escalera
+  [-21.80, -25.40].forEach(px => {
+    [0.30, 2.20, 4.10].forEach(pz => {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.95), M.beam);
+      post.position.set(px, 0.48, pz);
+      grpN1.add(post);
+    });
+  });
+
+  // 6. Área de Oficinas Administrativas N1 (Ejes Y10 a Y14, X: 14.0 a 27.20, Z: -6.735 a -2.20)
+  // Muro frontal divisorio de oficinas con puerta doble
+  const offDivLen = 12.80;
+  const offFrontWall = new THREE.Mesh(new THREE.BoxGeometry(offDivLen, H_N1_ACTUAL, 0.12), M.wallInt);
+  offFrontWall.position.set(20.50, H_N1_ACTUAL / 2, -2.40);
+  regWall(offFrontWall, grpN1, H_N1_ACTUAL);
+
+  // Puerta de acceso a oficinas
+  const offDoor = new THREE.Mesh(new THREE.BoxGeometry(1.60, 2.20, 0.06), M.glass);
+  offDoor.position.set(14.80, 1.10, -2.40);
+  grpN1.add(offDoor);
+
+  // Muros divisorios entre los 3 despachos administrativos (según plano N1)
+  [18.20, 22.40].forEach(divX => {
+    const divWall = new THREE.Mesh(new THREE.BoxGeometry(0.12, H_N1_ACTUAL, 4.30), M.wallInt);
+    divWall.position.set(divX, H_N1_ACTUAL / 2, -4.55);
+    regWall(divWall, grpN1, H_N1_ACTUAL);
+  });
+
+  // Módulo de Servicios / Sanitarios N1 (Ejes Y9 a Y10)
+  const servWallH = new THREE.Mesh(new THREE.BoxGeometry(3.50, H_N1_ACTUAL, 0.12), M.wallInt);
+  servWallH.position.set(12.25, H_N1_ACTUAL / 2, -4.20);
+  regWall(servWallH, grpN1, H_N1_ACTUAL);
+
+  const servWallV = new THREE.Mesh(new THREE.BoxGeometry(0.12, H_N1_ACTUAL, 2.50), M.wallInt);
+  servWallV.position.set(10.50, H_N1_ACTUAL / 2, -5.45);
+  regWall(servWallV, grpN1, H_N1_ACTUAL);
+
+  // 7. Barandal de Cristal de Doble Altura / Mezzanine en N1
+  // Barandal que bordea el vacío central hacia la planta baja
+  const mezRail1 = new THREE.Mesh(new THREE.BoxGeometry(8.50, 0.95, 0.06), M.glass);
+  mezRail1.position.set(-6.50, 0.48, 1.80);
+  grpN1.add(mezRail1);
+
+  const mezRail2 = new THREE.Mesh(new THREE.BoxGeometry(8.50, 0.95, 0.06), M.glass);
+  mezRail2.position.set(5.50, 0.48, 1.80);
+  grpN1.add(mezRail2);
+
+  // 8. Columnas estructurales de carga en N1
+  const colGeoN1 = new THREE.BoxGeometry(0.40, H_N1_ACTUAL, 0.40);
+  let curColX_N1 = -L / 2;
+  for (let i = 0; i < cotas.length; i++) {
+    curColX_N1 += cotas[i];
+    if (curColX_N1 < L / 2 - 0.5) {
+      const c1 = new THREE.Mesh(colGeoN1, M.col);
+      c1.position.set(curColX_N1, H_N1_ACTUAL / 2, -W / 2 + 0.25);
+      grpN1.add(c1);
+
+      const c2 = new THREE.Mesh(colGeoN1, M.col);
+      c2.position.set(curColX_N1, H_N1_ACTUAL / 2, -0.5);
+      grpN1.add(c2);
+    }
+  }
+
+  // =============================================================
   // NAVE OUTLET (OUTLET)
-  // -------------------------------------------------------------
+  // =============================================================
   const grpOutlet = new THREE.Group();
   grpOutlet.position.y = 0;
   scene.add(grpOutlet);
@@ -1461,6 +1619,21 @@ function buildBuilding(){
   mFloorOutlet.userData.level = 'OUTLET';
   grpOutlet.add(mFloorOutlet);
   floorMeshes['OUTLET'] = mFloorOutlet;
+
+  // Muros perimetrales Nave Outlet
+  const wallBackOutlet = new THREE.Mesh(new THREE.BoxGeometry(L, H_ROOF, t), M.wallExt);
+  wallBackOutlet.position.set(0, H_ROOF / 2, -W / 2);
+  regWall(wallBackOutlet, grpOutlet, H_ROOF);
+
+  const wallLeftOutlet = new THREE.Mesh(new THREE.BoxGeometry(t, H_ROOF, W), M.wallExt);
+  wallLeftOutlet.position.set(-L / 2, H_ROOF / 2, 0);
+  regWall(wallLeftOutlet, grpOutlet, H_ROOF);
+
+  const wallRightOutlet = new THREE.Mesh(new THREE.BoxGeometry(t, H_ROOF, W), M.wallExt);
+  wallRightOutlet.position.set(L / 2, H_ROOF / 2, 0);
+  regWall(wallRightOutlet, grpOutlet, H_ROOF);
+
+  buildFacadeSegments(grpOutlet, H_ROOF);
 
   // 7 Vigas Transversales de Acero ("PROYECCIÓN DE VIGA")
   const beamPositionsX = [-19.82, -12.50, -5.16, 2.22, 9.26, 16.64, 23.93];
@@ -1498,12 +1671,13 @@ function buildBuilding(){
     grpOutlet.add(border);
   });
 
-  // Obstáculos internos (el perímetro está delimitado con precisión por PERIMETER_BOUNDS)
+  // Delimitación de obstáculos técnicos internos
   LEVEL_OBSTACLES['PB'] = [
-    { minX: -26.0, maxX: -22.0, minZ: 1.5, maxZ: 4.8 }
+    { minX: -26.0, maxX: -21.0, minZ: 0.2, maxZ: 4.4 }
   ];
   LEVEL_OBSTACLES['N1'] = [
-    { minX: -26.0, maxX: -22.0, minZ: 1.5, maxZ: 4.8 }
+    { minX: -26.0, maxX: -21.0, minZ: 0.2, maxZ: 4.4 },
+    { minX:  14.0, maxX:  27.0, minZ: -6.7, maxZ: -2.0 }
   ];
   LEVEL_OBSTACLES['OUTLET'] = [];
 }
@@ -1567,15 +1741,17 @@ function setFloorMode(mode){
     activeWorkingLevel = 'PB';
     targetY['PB'] = 0;
     targetY['N1'] = 5.50;
-    targetY['OUTLET'] = 9.00;
+    targetY['OUTLET'] = 11.00;
     levelGroups['PB'].visible = true;
     levelGroups['N1'].visible = true;
     levelGroups['OUTLET'].visible = true;
 
-    animateCameraTo(new THREE.Vector3(0, 42, 38), new THREE.Vector3(0, 3.5, 0), 500);
+    animateCameraTo(new THREE.Vector3(0, 44, 40), new THREE.Vector3(0, 4.5, 0), 520);
   } else if(mode === 'PB'){
     activeWorkingLevel = 'PB';
     targetY['PB'] = 0;
+    targetY['N1'] = 15.0;
+    targetY['OUTLET'] = 25.0;
     levelGroups['PB'].visible = true;
     levelGroups['N1'].visible = false;
     levelGroups['OUTLET'].visible = false;
@@ -1583,7 +1759,9 @@ function setFloorMode(mode){
     animateCameraTo(new THREE.Vector3(0, 32, 28), new THREE.Vector3(0, 1.2, 0), 480);
   } else if(mode === 'N1'){
     activeWorkingLevel = 'N1';
+    targetY['PB'] = -15.0;
     targetY['N1'] = 0;
+    targetY['OUTLET'] = 20.0;
     levelGroups['PB'].visible = false;
     levelGroups['N1'].visible = true;
     levelGroups['OUTLET'].visible = false;
@@ -1591,6 +1769,8 @@ function setFloorMode(mode){
     animateCameraTo(new THREE.Vector3(0, 32, 28), new THREE.Vector3(0, 1.2, 0), 480);
   } else if(mode === 'OUTLET'){
     activeWorkingLevel = 'OUTLET';
+    targetY['PB'] = -25.0;
+    targetY['N1'] = -15.0;
     targetY['OUTLET'] = 0;
     levelGroups['PB'].visible = false;
     levelGroups['N1'].visible = false;
@@ -4027,7 +4207,7 @@ function renderSetsList(filterTxt = ''){
     renderedCount++;
     const card = document.createElement('div');
     card.className = 'sets-item-card';
-    const mainFinish = (s.acabados && s.acabados.length > 0) ? s.acabados.join(' · ') : 'Showroom Sidney Beige Yeso';
+    const mueblesStr = (s.muebles && s.muebles.length > 0) ? s.muebles.slice(0, 2).join(' · ') : 'Área de exhibición';
     
     card.innerHTML = `
       <div class="sets-item-top">
@@ -4035,7 +4215,7 @@ function renderSetsList(filterTxt = ''){
         <span class="sets-item-cat">${s.category || 'Exhibición'}</span>
       </div>
       <div class="sets-item-finish">
-        <b>Pared:</b> ${mainFinish}
+        <b>Mobiliario:</b> ${mueblesStr}
       </div>
     `;
     
